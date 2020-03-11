@@ -13,12 +13,14 @@ func (c *Clustering) selectOptimalClustering(hierarchy *cluster, score string) {
 	for i, finalCluster := range finalClusters {
 		finalClusters[i].FinalPoints = finalCluster.pointIndexes()
 	}
+
 	c.OptimalClustering = finalClusters
 }
 
 func getDelta(c *cluster, list []*cluster) []*cluster {
 	if c.delta == 1 {
 		list = append(list, c)
+		return list
 	}
 
 	for _, childCluster := range c.children {

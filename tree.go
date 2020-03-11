@@ -1,6 +1,9 @@
 package hdbscan
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type edge struct {
 	p1   int
@@ -20,8 +23,14 @@ type tree struct {
 func (c *Clustering) buildMinSpanningTree(graph *graph) {
 	mrg := graph.data
 
+	c.mst.vertices[0] = true
 	for len(c.mst.edges) < len(mrg) {
 		newEdge := c.mst.nearestVertice(mrg)
+		if newEdge.p1 == newEdge.p2 {
+			break
+		}
+
+		fmt.Println("edge: ", newEdge)
 
 		// add new point and new edge to mst
 		c.mst.vertices[newEdge.p2] = true

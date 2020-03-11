@@ -1,6 +1,7 @@
 package hdbscan
 
 import (
+	"fmt"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -54,12 +55,6 @@ func setVarianceScore(c *cluster) {
 }
 
 func setSizes(c *cluster) {
-	// leaf
-	if len(c.points) > 0 {
-		c.size = float64(len(c.points))
-		return
-	}
-
 	// parent
 	var size float64
 	for _, childCluster := range c.children {
@@ -67,11 +62,17 @@ func setSizes(c *cluster) {
 		size += childCluster.size
 	}
 
-	c.size = size
+	c.size = size + float64(len(c.points))
+
+	// DEBUG
+	fmt.Println("size: ", c.size)
 }
 
 func normalizeSizes(c *cluster, nd *distuv.Normal) {
 	c.size = nd.CDF(c.size)
+
+	// DEBUG
+	fmt.Println("normalized size: ", c.size)
 
 	for _, childCluster := range c.children {
 		normalizeSizes(childCluster, nd)
@@ -99,15 +100,18 @@ func setVariances(hierarchy *cluster, data [][]float64) {
 }
 
 func normalizeVariances(c *cluster, nd *distuv.Normal) {
-	c.score = nd.CDF(c.score)
+	c.variance = nd.CDF(c.variance)
+
+	// DEBUG
+	fmt.Println("normalized variance: ", c.variance)
 
 	for _, childCluster := range c.children {
-		normalizeSizes(childCluster, nd)
+		normalizeVariances(childCluster, nd)
 	}
 }
 
 func getVariances(c *cluster, variances []float64) []float64 {
-	variances = append(variances, c.score)
+	variances = append(variances, c.variance)
 
 	for _, childCluster := range c.children {
 		variances = append(variances, getVariances(childCluster, variances)...)
@@ -125,20 +129,19 @@ func (c *cluster) calculateVariance(data [][]float64) {
 	}
 
 	if len(clusterData) > 0 {
-		c.score = GeneralizedVariance(len(clusterData), len(clusterData[0]), unfold(clusterData))
+		c.variance = GeneralizedVariance(len(clusterData), len(clusterData[0]), unfold(clusterData))
 	}
 }
 
 func (c *cluster) pointIndexes() []int {
-	if len(c.points) > 0 {
-		return c.points
-	}
-
 	var points []int
 	for _, childCluster := range c.children {
 		childPoints := childCluster.pointIndexes()
 		points = append(points, childPoints...)
 	}
+
+	points = append(points, c.points...)
+	fmt.Println("points: ", points)
 
 	return points
 }

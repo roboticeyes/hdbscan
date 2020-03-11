@@ -64,16 +64,16 @@ func (c *Clustering) Run(distanceFunc DistanceFunc, score string) error {
 	c.buildMinSpanningTree(mrg)
 
 	// cluster-hierarchy
-	hierarchy := c.buildHierarchy(c.mst.edges, []node{})
-	clusterHierarchy := c.clustersHierarchy(&hierarchy, nil)
+	dendrogram := c.buildDendrogram(c.mst.edges, []node{})
+	clusters := c.buildClusters(dendrogram, nil)
 
 	// optimal-clustering
-	err := c.scoreClusters(&clusterHierarchy, score)
+	err := c.scoreClusters(&clusters, score)
 	if err != nil {
 		return err
 	}
 
-	c.selectOptimalClustering(&clusterHierarchy, score)
+	c.selectOptimalClustering(&clusters, score)
 
 	return nil
 }
