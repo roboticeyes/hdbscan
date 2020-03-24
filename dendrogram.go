@@ -1,9 +1,5 @@
 package hdbscan
 
-import (
-	"fmt"
-)
-
 type cluster struct {
 	// hierarchy
 	parent   *cluster
@@ -87,11 +83,11 @@ func (c *Clustering) buildDendrogram(edgesToProcess []edge, nodes []node) *node 
 	}
 
 	// pass root into next nodes
-	for _, ol := range nodes {
-		if ol.parent == nil {
-			childNodes = append(childNodes, ol)
-		}
-	}
+	// for _, ol := range nodes {
+	// 	if ol.parent == nil {
+	// 		childNodes = append(childNodes, ol)
+	// 	}
+	// }
 
 	return c.buildDendrogram(remainingEdges, childNodes)
 }
@@ -132,8 +128,6 @@ func (c *Clustering) buildClusters(root *node, parentCluster *cluster) cluster {
 			parentCluster.pointsDistParent = append(parentCluster.pointsDistParent, childNode.distToParent)
 		}
 	}
-
-	fmt.Println("cluster points: ", parentCluster.points)
 
 	return *parentCluster
 }
