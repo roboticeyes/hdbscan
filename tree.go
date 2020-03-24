@@ -1,7 +1,6 @@
 package hdbscan
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -29,8 +28,6 @@ func (c *Clustering) buildMinSpanningTree(graph *graph) {
 		if newEdge.p1 == newEdge.p2 {
 			break
 		}
-
-		fmt.Println("edge: ", newEdge)
 
 		// add new point and new edge to mst
 		c.mst.vertices[newEdge.p2] = true

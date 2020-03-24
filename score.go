@@ -1,7 +1,6 @@
 package hdbscan
 
 import (
-	"fmt"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -63,16 +62,10 @@ func setSizes(c *cluster) {
 	}
 
 	c.size = size + float64(len(c.points))
-
-	// DEBUG
-	fmt.Println("size: ", c.size)
 }
 
 func normalizeSizes(c *cluster, nd *distuv.Normal) {
 	c.size = nd.CDF(c.size)
-
-	// DEBUG
-	fmt.Println("normalized size: ", c.size)
 
 	for _, childCluster := range c.children {
 		normalizeSizes(childCluster, nd)
@@ -101,9 +94,6 @@ func setVariances(hierarchy *cluster, data [][]float64) {
 
 func normalizeVariances(c *cluster, nd *distuv.Normal) {
 	c.variance = nd.CDF(c.variance)
-
-	// DEBUG
-	fmt.Println("normalized variance: ", c.variance)
 
 	for _, childCluster := range c.children {
 		normalizeVariances(childCluster, nd)
@@ -141,7 +131,6 @@ func (c *cluster) pointIndexes() []int {
 	}
 
 	points = append(points, c.points...)
-	fmt.Println("points: ", points)
 
 	return points
 }
