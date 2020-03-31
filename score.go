@@ -43,9 +43,9 @@ func (c *Clustering) varianceScores(hierarchy *cluster) error {
 }
 
 func setVarianceScore(c *cluster) {
-	if c.variance == 0 {
-		c.variance = 1
-	}
+	// if c.variance == 0 {
+	// 	c.variance = 1
+	// }
 	c.score = c.size / c.variance
 
 	for _, childCluster := range c.children {

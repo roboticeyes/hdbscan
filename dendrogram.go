@@ -33,15 +33,6 @@ type node struct {
 }
 
 func (c *Clustering) buildDendrogram(edgesToProcess []edge, nodes []node) *node {
-	if len(edgesToProcess) == 0 {
-		// return root node
-		for i, nd := range nodes {
-			if nd.parent == nil {
-				return &nodes[i]
-			}
-		}
-	}
-
 	// find all unique starting points (of remaining edges)
 	startingPoints := make(map[int]bool)
 	for _, e := range edgesToProcess {
@@ -71,10 +62,10 @@ func (c *Clustering) buildDendrogram(edgesToProcess []edge, nodes []node) *node 
 		}
 	}
 
-	// find all nodes that childNodes are parents of
+	// set relationships
 	for i, nl := range childNodes {
 		for j, ol := range nodes {
-			if ol.parentKey == nl.key && nodes[j].parent == nil {
+			if ol.parentKey == nl.key {
 				childNodes[i].children = append(childNodes[i].children, &nodes[j])
 				childNodes[i].descendantCount = childNodes[i].descendantCount + ol.descendantCount + 1
 				nodes[j].parent = &childNodes[i]
@@ -82,12 +73,35 @@ func (c *Clustering) buildDendrogram(edgesToProcess []edge, nodes []node) *node 
 		}
 	}
 
-	// pass root into next nodes
+	// add all nodes without defined parent back into final node list
 	// for _, ol := range nodes {
-	// 	if ol.parent == nil {
+	// 	if ol.parent == nil && !containsNode(childNodes, ol) {
 	// 		childNodes = append(childNodes, ol)
 	// 	}
 	// }
+
+	// set and return root node
+	if len(remainingEdges) == 0 && len(startingPoints) > 0 {
+		root := node{}
+		for startingPoint, ok := range startingPoints {
+			if ok {
+				root.key = startingPoint
+			}
+		}
+
+		childNodes = append(childNodes, root)
+		rootIndex := len(childNodes) - 1
+
+		for j, ol := range childNodes {
+			if ol.parentKey == root.key && root.key != ol.key {
+				childNodes[rootIndex].children = append(childNodes[rootIndex].children, &childNodes[j])
+				childNodes[rootIndex].descendantCount = childNodes[rootIndex].descendantCount + ol.descendantCount + 1
+				childNodes[j].parent = &childNodes[rootIndex]
+			}
+		}
+
+		return &childNodes[rootIndex]
+	}
 
 	return c.buildDendrogram(remainingEdges, childNodes)
 }

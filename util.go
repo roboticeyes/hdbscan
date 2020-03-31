@@ -44,3 +44,13 @@ func isInf(value float64) float64 {
 func isNum(value float64) float64 {
 	return isNaN(isInf(value))
 }
+
+func containsNode(list []node, n node) bool {
+	for _, node := range list {
+		if node.key == n.key {
+			return true
+		}
+	}
+
+	return false
+}
