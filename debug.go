@@ -8,6 +8,7 @@ type debugClusterVariance struct {
 	Score    float64
 	Variance float64
 	Size     float64
+	Delta    int
 	Points   []int
 }
 
@@ -94,6 +95,25 @@ func (c *cluster) debugClusterVariance() debugClusterVariance {
 		Score:    c.score,
 		Variance: c.variance,
 		Size:     c.size,
+		Delta:    c.delta,
 		Points:   c.pointIndexes(),
 	}
+}
+
+func (c *cluster) allDebugClusterVariances(output []debugClusterVariance) []debugClusterVariance {
+	output = append(output, c.debugClusterVariance())
+
+	for _, child := range c.children {
+		allOutputs := child.allDebugClusterVariances([]debugClusterVariance{})
+		output = append(output, allOutputs...)
+	}
+
+	return output
+}
+
+// String ...
+func (c cluster) String() string {
+	output := c.allDebugClusterVariances([]debugClusterVariance{})
+	data, _ := json.MarshalIndent(output, "", "  ")
+	return string(data)
 }
