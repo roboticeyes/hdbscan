@@ -54,3 +54,13 @@ func containsNode(list []node, n node) bool {
 
 	return false
 }
+
+func containsInt(list []int, i int) bool {
+	for _, v := range list {
+		if v == i {
+			return true
+		}
+	}
+
+	return false
+}

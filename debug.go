@@ -96,17 +96,11 @@ func (c *cluster) debugClusterVariance() debugClusterVariance {
 		Variance: c.variance,
 		Size:     c.size,
 		Delta:    c.delta,
-		Points:   c.pointIndexes(),
 	}
 }
 
 func (c *cluster) allDebugClusterVariances(output []debugClusterVariance) []debugClusterVariance {
 	output = append(output, c.debugClusterVariance())
-
-	for _, child := range c.children {
-		allOutputs := child.allDebugClusterVariances([]debugClusterVariance{})
-		output = append(output, allOutputs...)
-	}
 
 	return output
 }

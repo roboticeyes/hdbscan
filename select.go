@@ -1,85 +1,119 @@
 package hdbscan
 
-func (c *Clustering) selectOptimalClustering(hierarchy *cluster, score string) {
+import (
+	"fmt"
+)
+
+func (c *Clustering) selectOptimalClustering(score string) {
 	switch score {
 	case VarianceScore:
-		setVarianceDelta(hierarchy)
+		c.setVarianceDeltas()
 	default:
 		// setStabilityDelta(hierarchy)
 	}
 
-	var finalClusters []*cluster
-	finalClusters = getDelta(hierarchy, finalClusters)
-	for i, finalCluster := range finalClusters {
-		finalClusters[i].FinalPoints = finalCluster.pointIndexes()
-	}
-
-	c.OptimalClustering = finalClusters
-}
-
-func getDelta(c *cluster, list []*cluster) []*cluster {
-	if c.delta == 1 {
-		list = append(list, c)
-		return list
-	}
-
-	for _, childCluster := range c.children {
-		subTreeList := getDelta(childCluster, []*cluster{})
-		list = append(list, subTreeList...)
-	}
-
-	return list
-}
-
-func setVarianceDelta(c *cluster) {
-	for _, childCluster := range c.children {
-		if len(childCluster.children) > 0 {
-			setVarianceDelta(childCluster)
-		}
-
-		calculateVarianceDelta(childCluster)
-	}
-
-	calculateVarianceDelta(c)
-}
-
-func calculateVarianceDelta(c *cluster) {
-	// if any children are 0 delta, set delta to 0
-	var zero bool
-	for _, childCluster := range c.children {
-		if childCluster.delta == 0 {
-			zero = true
+	var finalClusters clusters
+	for _, cluster := range c.Clusters {
+		if cluster.delta == 1 {
+			finalClusters = append(finalClusters, cluster)
 		}
 	}
-	if zero {
-		c.delta = 0
-		return
-	}
 
-	// set delta
-	var childrenAverageScore float64
-	if len(c.children) > 0 {
-		for _, childCluster := range c.children {
-			childrenAverageScore += childCluster.score
+	c.Clusters = finalClusters
+}
+
+func (c *Clustering) setVarianceDeltas() {
+	// var one bool
+	for _, cluster := range c.Clusters {
+		// calculate average childrens scores
+		var avgScore float64
+		for _, child := range cluster.children {
+			// calculate childrens scores
+			avgScore += c.Clusters.getClusterByID(child).score
 		}
-		childrenAverageScore /= float64(len(c.children))
-	}
+		avgScore /= float64(len(cluster.children))
 
-	if c.score < childrenAverageScore {
-		c.delta = 0
-	} else {
-		c.delta = 1
+		if cluster.score <= avgScore && len(cluster.children) > 0 {
+			cluster.delta = 0
+		} else {
+			cluster.delta = 1
 
-		for _, childCluster := range c.children {
-			setSubTreeDelta(childCluster, 0)
+			// check if any subclusters are already delta-1
+			var subDeltaOne bool
+			subClusters := c.Clusters.subTree(cluster.id)
+			for _, subCluster := range subClusters {
+				if subCluster.delta == 1 {
+					subDeltaOne = true
+				}
+			}
+
+			if subDeltaOne {
+				cluster.delta = 0
+
+				// set parents to 0
+				parents := c.Clusters.allParents(cluster)
+				for _, parent := range parents {
+					parent.delta = 0
+				}
+			}
+
+			if cluster.parent != nil {
+				// if parent already calculated to be better
+				if c.Clusters.getClusterByID(*cluster.parent).delta == 1 {
+					cluster.delta = 0
+				}
+			}
+		}
+
+		if cluster.parent != nil {
+			fmt.Printf("Cluster %+v with score %+v, delta %+v, children %+v, parent %+v, and points %+v\n", cluster.id, cluster.score, cluster.delta, cluster.children, *cluster.parent, cluster.Points)
 		}
 	}
 }
 
-func setSubTreeDelta(c *cluster, delta int) {
-	c.delta = delta
-
-	for _, childCluster := range c.children {
-		setSubTreeDelta(childCluster, delta)
+func (c clusters) root() *cluster {
+	for _, cluster := range c {
+		if cluster.parent == nil {
+			return cluster
+		}
 	}
+
+	return nil
+}
+
+func (c clusters) leaves() clusters {
+	var leaves clusters
+	for _, cluster := range c {
+		if len(cluster.children) == 0 {
+			leaves = append(leaves, cluster)
+		}
+	}
+	return leaves
+}
+
+func (c clusters) allParents(clstr *cluster) clusters {
+	var parents clusters
+
+	if clstr.parent != nil {
+		parentCluster := c.getClusterByID(*clstr.parent)
+		allParents := c.allParents(parentCluster)
+		parents = append(parents, allParents...)
+	}
+
+	return parents
+}
+
+func (c clusters) subTree(id int) clusters {
+	var subTree clusters
+	for _, cluster := range c {
+		if cluster.parent != nil {
+			if *cluster.parent == id {
+				subTree = append(subTree, cluster)
+				childTree := c.subTree(cluster.id)
+				subTree = append(subTree, childTree...)
+			}
+		}
+	}
+
+	return subTree
 }

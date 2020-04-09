@@ -1,147 +1,119 @@
 package hdbscan
 
-type cluster struct {
-	// hierarchy
-	parent   *cluster
-	children []*cluster
+import (
+	"sort"
+)
 
-	// data
-	points           []int
-	pointsDistParent []float64
-	FinalPoints      []int
-
-	// score
-	score float64
-	delta int
-
-	// params
-	size     float64
-	variance float64
-	lMin     float64
-}
-
-// a node describes the position
-// of a point in the dendrogram of a full
-// point-hierarchy.
 type node struct {
 	key             int
 	parentKey       int
 	parent          *node
-	distToParent    float64
 	children        []*node
 	descendantCount int
 }
 
-func (c *Clustering) buildDendrogram(edgesToProcess []edge, nodes []node) *node {
-	// find all unique starting points (of remaining edges)
-	startingPoints := make(map[int]bool)
-	for _, e := range edgesToProcess {
-		if _, ok := startingPoints[e.p1]; !ok && e.p1 != e.p2 {
-			startingPoints[e.p1] = true
-		}
-	}
-
-	// find all child nodes
-	remainingEdges := []edge{}
-	childNodes := []node{}
-	for _, e := range c.mst.edges {
-		// child-only node ("leaf")
-		if _, ok := startingPoints[e.p2]; !ok {
-			n := node{
-				key:          e.p2,
-				parentKey:    e.p1,
-				parent:       nil,
-				distToParent: e.dist,
-				children:     []*node{},
-			}
-
-			childNodes = append(childNodes, n)
-		} else {
-			// edge not processed
-			remainingEdges = append(remainingEdges, e)
-		}
-	}
-
-	// set relationships
-	for i, nl := range childNodes {
-		for j, ol := range nodes {
-			if ol.parentKey == nl.key {
-				childNodes[i].children = append(childNodes[i].children, &nodes[j])
-				childNodes[i].descendantCount = childNodes[i].descendantCount + ol.descendantCount + 1
-				nodes[j].parent = &childNodes[i]
-			}
-		}
-	}
-
-	// add all nodes without defined parent back into final node list
-	// for _, ol := range nodes {
-	// 	if ol.parent == nil && !containsNode(childNodes, ol) {
-	// 		childNodes = append(childNodes, ol)
-	// 	}
-	// }
-
-	// set and return root node
-	if len(remainingEdges) == 0 && len(startingPoints) > 0 {
-		root := node{}
-		for startingPoint, ok := range startingPoints {
-			if ok {
-				root.key = startingPoint
-			}
-		}
-
-		childNodes = append(childNodes, root)
-		rootIndex := len(childNodes) - 1
-
-		for j, ol := range childNodes {
-			if ol.parentKey == root.key && root.key != ol.key {
-				childNodes[rootIndex].children = append(childNodes[rootIndex].children, &childNodes[j])
-				childNodes[rootIndex].descendantCount = childNodes[rootIndex].descendantCount + ol.descendantCount + 1
-				childNodes[j].parent = &childNodes[rootIndex]
-			}
-		}
-
-		return &childNodes[rootIndex]
-	}
-
-	return c.buildDendrogram(remainingEdges, childNodes)
+type link struct {
+	id              int
+	parent          *link
+	children        []*link
+	points          []int
+	descendantCount int
 }
 
-// the clusters hierarchy will not contain clusters that are smaller than the minimum cluster size
-// every leaf-cluster is unique subset of points.
-func (c *Clustering) buildClusters(root *node, parentCluster *cluster) cluster {
-	// set starting cluster
-	if parentCluster == nil {
-		parentCluster = &cluster{
-			parent:           nil,
-			points:           []int{},
-			pointsDistParent: []float64{},
-			children:         []*cluster{},
-		}
-	}
+func (c *Clustering) buildDendrogram() []*link {
+	sort.Sort(c.mst.edges)
 
-	// traverse dendrogram tree (from top node)
-	for _, childNode := range root.children {
-		// if sub-tree is large enough to be a cluster
-		// create new (sub-)cluster ...
-		if childNode.descendantCount >= c.mcs {
-			subCluster := &cluster{
-				parent:           parentCluster,
-				points:           []int{},
-				pointsDistParent: []float64{},
-				children:         []*cluster{},
+	var links []*link
+	for _, e := range c.mst.edges {
+		var p1TopLink *link
+		var p2TopLink *link
+
+		for _, link := range links {
+			if containsInt(link.points, e.p1) && link.parent == nil {
+				p1TopLink = link
 			}
-			subCluster.points = append(subCluster.points, childNode.key)
-			subCluster.pointsDistParent = append(subCluster.pointsDistParent, childNode.distToParent)
-			parentCluster.children = append(parentCluster.children, subCluster)
 
-			c.buildClusters(childNode, subCluster)
+			if containsInt(link.points, e.p2) && link.parent == nil {
+				p2TopLink = link
+			}
+		}
+
+		uniquePoints := make(map[int]bool)
+		if p1TopLink != nil && p2TopLink != nil {
+			for _, p := range p1TopLink.points {
+				uniquePoints[p] = true
+			}
+			for _, p := range p2TopLink.points {
+				uniquePoints[p] = true
+			}
+			var points []int
+			for p, ok := range uniquePoints {
+				if ok {
+					points = append(points, p)
+				}
+			}
+
+			newLink := link{
+				id:       len(links),
+				children: []*link{p1TopLink, p2TopLink},
+				points:   points,
+			}
+
+			p1TopLink.parent = &newLink
+			p2TopLink.parent = &newLink
+
+			links = append(links, &newLink)
+		} else if p1TopLink != nil && p2TopLink == nil {
+			uniquePoints[e.p2] = true
+			for _, p := range p1TopLink.points {
+				uniquePoints[p] = true
+			}
+			var points []int
+			for p, ok := range uniquePoints {
+				if ok {
+					points = append(points, p)
+				}
+			}
+
+			newLink := link{
+				id:       len(links),
+				children: []*link{p1TopLink},
+				points:   points,
+			}
+
+			p1TopLink.parent = &newLink
+
+			links = append(links, &newLink)
+		} else if p2TopLink != nil && p1TopLink == nil {
+			uniquePoints[e.p1] = true
+			for _, p := range p2TopLink.points {
+				uniquePoints[p] = true
+			}
+			var points []int
+			for p, ok := range uniquePoints {
+				if ok {
+					points = append(points, p)
+				}
+			}
+
+			newLink := link{
+				id:       len(links),
+				children: []*link{p2TopLink},
+				points:   points,
+			}
+
+			p2TopLink.parent = &newLink
+
+			links = append(links, &newLink)
 		} else {
-			// if sub-tree is not large enough to be a cluster
-			// add current point to parent cluster
-			parentCluster.points = append(parentCluster.points, childNode.key)
-			parentCluster.pointsDistParent = append(parentCluster.pointsDistParent, childNode.distToParent)
+			newLink := link{
+				id:     len(links),
+				points: []int{e.p1, e.p2},
+			}
+
+			links = append(links, &newLink)
 		}
 	}
 
-	return *parentCluster
+	return links
 }

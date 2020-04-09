@@ -1,6 +1,8 @@
 package hdbscan
 
 import (
+	"math"
+
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
 )
@@ -12,5 +14,6 @@ func GeneralizedVariance(rows, columns int, data []float64) float64 {
 	covMatrix := &mat.SymDense{}
 	matrix := mat.NewDense(rows, columns, data)
 	stat.CovarianceMatrix(covMatrix, matrix, nil)
-	return mat.Det(covMatrix)
+	det, _ := mat.LogDet(covMatrix)
+	return math.Abs(det)
 }

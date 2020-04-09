@@ -58,6 +58,9 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) *graph {
 		coreDistances = append(coreDistances, pointDistances[c.mcs-1])
 	}
 
+	// set core distances for later use
+	c.coreDistances = coreDistances
+
 	// mutualReachabililtyGraph
 	for i := 0; i < length; i++ {
 		c.sempahore <- true

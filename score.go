@@ -1,142 +1,63 @@
 package hdbscan
 
 import (
-	"gonum.org/v1/gonum/stat/distuv"
+	"fmt"
 )
 
-func (c *Clustering) scoreClusters(clusterHierarchy *cluster, optimization string) error {
-	var err error
+func (c *Clustering) scoreClusters(optimization string) {
 	switch optimization {
 	case VarianceScore:
-		err = c.varianceScores(clusterHierarchy)
+		c.varianceScores()
 	default:
-		err = c.stabilityScores(clusterHierarchy)
+		c.stabilityScores()
 	}
-
-	return err
 }
 
-func (c *Clustering) stabilityScores(hierarchy *cluster) error {
+func (c *Clustering) varianceScores() {
+	c.setNormalizedSizes()
+	c.setNormalizedVariances()
+	c.Clusters.setVarianceScores()
+}
+
+func (c clusters) setVarianceScores() {
+	for _, cluster := range c {
+		cluster.score = cluster.size / cluster.variance
+	}
+}
+
+func (c *Clustering) setNormalizedSizes() {
+	// distro
+	var sizes []float64
+	for _, cluster := range c.Clusters {
+		size := float64(len(cluster.Points))
+		sizes = append(sizes, size)
+		cluster.size = size
+	}
+}
+
+func (c *Clustering) setNormalizedVariances() {
+	// variances
+	var variances []float64
+	for _, cluster := range c.Clusters {
+		// data
+		var clusterData [][]float64
+		for _, pointIndex := range cluster.Points {
+			clusterData = append(clusterData, c.data[pointIndex])
+		}
+
+		variance := GeneralizedVariance(len(cluster.Points), len(clusterData[0]), unfold(clusterData))
+		cluster.variance = isNum(variance)
+		variances = append(variances, cluster.variance)
+		fmt.Printf("Cluster: %d, Variance: %+v\n", cluster.id, cluster.variance)
+	}
+}
+
+func (c *Clustering) stabilityScores() {
 	// TODO: implement
-	return nil
 }
 
-// optimizing for largest cluster sizes with smallest variances
-func (c *Clustering) varianceScores(hierarchy *cluster) error {
-	// normalized cluster sizes
-	setSizes(hierarchy)
-	sizes := getSizes(hierarchy, []float64{})
-	sizeDistro := distuv.Normal{}
-	sizeDistro.Fit(sizes, nil)
-	normalizeSizes(hierarchy, &sizeDistro)
-
-	// normalized cluster general-variances
-	setVariances(hierarchy, c.data)
-	variances := getVariances(hierarchy, []float64{})
-	varianceDistro := distuv.Normal{}
-	varianceDistro.Fit(variances, nil)
-	normalizeVariances(hierarchy, &varianceDistro)
-
-	setVarianceScore(hierarchy)
-
-	return nil
-}
-
-func setVarianceScore(c *cluster) {
-	// if c.variance == 0 {
-	// 	c.variance = 1
-	// }
-	c.score = c.size / c.variance
-
-	for _, childCluster := range c.children {
-		setVarianceScore(childCluster)
-	}
-}
-
-func setSizes(c *cluster) {
-	// parent
-	var size float64
-	for _, childCluster := range c.children {
-		setSizes(childCluster)
-		size += childCluster.size
-	}
-
-	c.size = size + float64(len(c.points))
-}
-
-func normalizeSizes(c *cluster, nd *distuv.Normal) {
-	c.size = nd.CDF(c.size)
-
-	for _, childCluster := range c.children {
-		normalizeSizes(childCluster, nd)
-	}
-}
-
-func getSizes(c *cluster, sizes []float64) []float64 {
-	sizes = append(sizes, c.size)
-
-	for _, childCluster := range c.children {
-		sizes = append(sizes, getSizes(childCluster, sizes)...)
-	}
-
-	return sizes
-}
-
-func setVariances(hierarchy *cluster, data [][]float64) {
-	// children
-	for _, childCluster := range hierarchy.children {
-		setVariances(childCluster, data)
-	}
-
-	// this
-	hierarchy.calculateVariance(data)
-}
-
-func normalizeVariances(c *cluster, nd *distuv.Normal) {
-	c.variance = nd.CDF(c.variance)
-
-	for _, childCluster := range c.children {
-		normalizeVariances(childCluster, nd)
-	}
-}
-
-func getVariances(c *cluster, variances []float64) []float64 {
-	variances = append(variances, c.variance)
-
-	for _, childCluster := range c.children {
-		variances = append(variances, getVariances(childCluster, variances)...)
-	}
-
-	return variances
-}
-
-func (c *cluster) calculateVariance(data [][]float64) {
-	pointIndices := c.pointIndexes()
-
-	var clusterData [][]float64
-	for _, pointIndex := range pointIndices {
-		clusterData = append(clusterData, data[pointIndex])
-	}
-
-	if len(clusterData) > 0 {
-		c.variance = GeneralizedVariance(len(clusterData), len(clusterData[0]), unfold(clusterData))
-	}
-}
-
-func (c *cluster) pointIndexes() []int {
-	var points []int
-	for _, childCluster := range c.children {
-		childPoints := childCluster.pointIndexes()
-		points = append(points, childPoints...)
-	}
-
-	points = append(points, c.points...)
-
-	return points
-}
-
-func (c *cluster) calculateStability(mrg *graph) float64 {
-	if len(c.points) > 0 {
+func (c *cluster) calculateStability() float64 {
+	if len(c.Points) > 0 {
 		// var sum float64
 		// for _, pIndex := range c.points {
 
@@ -147,10 +68,10 @@ func (c *cluster) calculateStability(mrg *graph) float64 {
 	}
 
 	var stability float64
-	for _, childCluster := range c.children {
-		childStability := childCluster.calculateStability(mrg)
-		stability += childStability
-	}
+	// for _, childCluster := range c.children {
+	// 	childStability := childCluster.calculateStability(mrg)
+	// 	stability += childStability
+	// }
 
 	return stability
 }
@@ -160,13 +81,3 @@ func potentialStability(c *cluster) float64 {
 	// else: return max(stability, sum-of-children-stabilities)
 	return 0
 }
-
-// func listClusters(c *cluster, list []*cluster) []*cluster {
-// 	list = append(list, c)
-
-// 	for _, childCluster := range c.children {
-// 		list = append(list, listClusters(childCluster, list)...)
-// 	}
-
-// 	return list
-// }

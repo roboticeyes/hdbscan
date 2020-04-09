@@ -40,18 +40,11 @@ func (d *DistanceMatrix) Get(index int) []float64 {
 
 // EuclideanDistance ...
 var EuclideanDistance = func(v1, v2 []float64) float64 {
-	if len(v1) != len(v2) {
-		return 0
-	}
-
-	var total float64
+	acc := 0.0
 	for i, v := range v1 {
-		diff := v - v2[i]
-		diffSquared := diff * diff
-		total += diffSquared
+		acc += math.Pow((v - v2[i]), 2)
 	}
-
-	return math.Sqrt(total)
+	return math.Pow(acc, 0.5)
 }
 
 // TODO: add other distance function options...
