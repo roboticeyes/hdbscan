@@ -1,9 +1,5 @@
 package hdbscan
 
-import (
-	"fmt"
-)
-
 func (c *Clustering) scoreClusters(optimization string) {
 	switch optimization {
 	case VarianceScore:
@@ -48,7 +44,6 @@ func (c *Clustering) setNormalizedVariances() {
 		variance := GeneralizedVariance(len(cluster.Points), len(clusterData[0]), unfold(clusterData))
 		cluster.variance = isNum(variance)
 		variances = append(variances, cluster.variance)
-		fmt.Printf("Cluster: %d, Variance: %+v\n", cluster.id, cluster.variance)
 	}
 }
 

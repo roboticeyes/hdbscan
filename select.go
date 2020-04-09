@@ -1,9 +1,5 @@
 package hdbscan
 
-import (
-	"fmt"
-)
-
 func (c *Clustering) selectOptimalClustering(score string) {
 	switch score {
 	case VarianceScore:
@@ -63,10 +59,6 @@ func (c *Clustering) setVarianceDeltas() {
 					cluster.delta = 0
 				}
 			}
-		}
-
-		if cluster.parent != nil {
-			fmt.Printf("Cluster %+v with score %+v, delta %+v, children %+v, parent %+v, and points %+v\n", cluster.id, cluster.score, cluster.delta, cluster.children, *cluster.parent, cluster.Points)
 		}
 	}
 }
