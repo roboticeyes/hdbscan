@@ -45,9 +45,11 @@ func TestMinimumSpanningTree(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 
+	clustering.minTree = true
+
 	// graph
-	mrg := clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree(mrg)
+	clustering.mutualReachabilityGraph(EuclideanDistance)
+	clustering.buildMinSpanningTree()
 
 	fmt.Println(clustering.mst.edges)
 }
@@ -59,8 +61,8 @@ func TestBuildDendrogram(t *testing.T) {
 	}
 
 	// graph
-	mrg := clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree(mrg)
+	clustering.mutualReachabilityGraph(EuclideanDistance)
+	clustering.buildMinSpanningTree()
 
 	// cluster-hierarchy
 	dendrogram := clustering.buildDendrogram()
@@ -77,8 +79,8 @@ func TestBuildClusters(t *testing.T) {
 	}
 
 	// graph
-	mrg := clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree(mrg)
+	clustering.mutualReachabilityGraph(EuclideanDistance)
+	clustering.buildMinSpanningTree()
 
 	// cluster-hierarchy
 	dendrogram := clustering.buildDendrogram()
@@ -97,8 +99,8 @@ func TestClusterScoring(t *testing.T) {
 	}
 
 	// graph
-	mrg := clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree(mrg)
+	clustering.mutualReachabilityGraph(EuclideanDistance)
+	clustering.buildMinSpanningTree()
 
 	// cluster-hierarchy
 	dendrogram := clustering.buildDendrogram()
@@ -117,7 +119,7 @@ func TestClustering(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 
-	err = clustering.Run(EuclideanDistance, VarianceScore)
+	err = clustering.Run(EuclideanDistance, VarianceScore, true)
 	if err != nil {
 		t.Errorf("clustering run error: %+v", err)
 	}

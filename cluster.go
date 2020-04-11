@@ -28,10 +28,12 @@ type clusters []*cluster
 
 // Clustering ...
 type Clustering struct {
-	data [][]float64
-	mcs  int // minimum cluster size
+	data           [][]float64
+	distanceMatrix *graph
+	mcs            int // minimum cluster size
 
 	// minimum spanning tree
+	minTree       bool
 	mst           *tree
 	coreDistances []float64
 
@@ -73,9 +75,10 @@ func NewClustering(data [][]float64, minimumClusterSize int) (*Clustering, error
 }
 
 // Run ...
-func (c *Clustering) Run(distanceFunc DistanceFunc, score string) error {
-	mrg := c.mutualReachabilityGraph(distanceFunc)
-	c.buildMinSpanningTree(mrg)
+func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) error {
+	c.minTree = mst
+	c.mutualReachabilityGraph(distanceFunc)
+	c.buildMinSpanningTree()
 	dendrogram := c.buildDendrogram()
 	c.buildClusters(dendrogram)
 	c.scoreClusters(score)

@@ -25,29 +25,21 @@ func (g *graph) add(newData []float64) {
 
 // the mutual reachability graph provides a mutual-reachability-distance matrix
 // which specifies a metric of how far a point is from another point.
-func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) *graph {
+func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) {
 	length := len(c.data)
 	mutualReachabililtyGraph := newGraph()
 
 	// distance matrix
 	distanceMatrix := NewDistanceMatrix()
 	for _, p1 := range c.data {
-		c.sempahore <- true
-		c.wg.Add(1)
-		go func(p1 []float64) {
-			pointDistances := []float64{}
+		pointDistances := []float64{}
 
-			for _, p2 := range c.data {
-				pointDistances = append(pointDistances, distanceFunc(p1, p2))
-			}
+		for _, p2 := range c.data {
+			pointDistances = append(pointDistances, distanceFunc(p1, p2))
+		}
 
-			distanceMatrix.Add(pointDistances)
-
-			<-c.sempahore
-			c.wg.Done()
-		}(p1)
+		distanceMatrix.Add(pointDistances)
 	}
-	c.wg.Wait()
 
 	// core distances = distance from point to its mcs-1 nearest-neighbor
 	coreDistances := []float64{}
@@ -82,5 +74,5 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) *graph {
 	}
 	c.wg.Wait()
 
-	return mutualReachabililtyGraph
+	c.distanceMatrix = mutualReachabililtyGraph
 }

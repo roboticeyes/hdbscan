@@ -20,11 +20,33 @@ type link struct {
 	descendantCount int
 }
 
+func (c *Clustering) generateBaseLinks() edges {
+	var bases edges
+
+	for point, distances := range c.distanceMatrix.data {
+		minIndex, minValue := min(distances)
+		e := edge{
+			p1:   point,
+			p2:   minIndex,
+			dist: minValue,
+		}
+		bases = append(bases, e)
+	}
+
+	return bases
+}
+
 func (c *Clustering) buildDendrogram() []*link {
-	sort.Sort(c.mst.edges)
+	var baseEdges edges
+	if c.minTree {
+		baseEdges = c.mst.edges
+	} else {
+		baseEdges = c.generateBaseLinks()
+	}
+	sort.Sort(baseEdges)
 
 	var links []*link
-	for _, e := range c.mst.edges {
+	for _, e := range baseEdges {
 		var p1TopLink *link
 		var p2TopLink *link
 

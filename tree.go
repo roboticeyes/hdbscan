@@ -21,8 +21,8 @@ type tree struct {
 // mutual-reachability distances between any two connected points.
 // where no two points are connected by an edge unless they are closest
 // to each other relative to other points.
-func (c *Clustering) buildMinSpanningTree(graph *graph) {
-	mrg := graph.data
+func (c *Clustering) buildMinSpanningTree() {
+	mrg := c.distanceMatrix.data
 
 	c.mst.vertices = append(c.mst.vertices, 0)
 	for len(c.mst.edges) < len(mrg) {

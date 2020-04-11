@@ -13,6 +13,19 @@ func max(values []float64) float64 {
 	return maxNum
 }
 
+func min(values []float64) (int, float64) {
+	minNum := math.MaxFloat64
+	var index int
+	for i, v := range values {
+		if v < minNum {
+			index = i
+			minNum = v
+		}
+	}
+
+	return index, minNum
+}
+
 func unfold(data [][]float64) []float64 {
 	var ud []float64
 	for _, row := range data {
