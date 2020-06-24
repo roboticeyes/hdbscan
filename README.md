@@ -10,7 +10,7 @@ HDBSCAN algorithm implementation in golang.
 
 A re-write of code started by the brilliant developer Edouard Belval at https://github.com/Belval/hdbscan
 
-```
+```go
 import(
     "github.com/humilityai/hdbscan"
 )
@@ -21,8 +21,10 @@ func main() {
         []float64{3,2,1},
     }
     minimumClusterSize := len(data)
-
+    
     clustering := hdbscan.NewClustering(data, minimumClusterSize)
-    clustering.Run()
+
+    // the final boolean argument is: minimum-spanning-tree argument
+    clustering.Run(hdbscan.EuclideanDistance, hdbscan.VarianceScore, true)
 }
 ```
