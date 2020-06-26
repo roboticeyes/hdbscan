@@ -22,11 +22,13 @@ type tree struct {
 // where no two points are connected by an edge unless they are closest
 // to each other relative to other points.
 func (c *Clustering) buildMinSpanningTree() {
-	mrg := c.distanceMatrix.data
+	data := c.distanceMatrix.data
+	columns := len(c.data)
+	rows := len(c.distanceMatrix.data) / columns
 
 	c.mst.vertices = append(c.mst.vertices, 0)
-	for len(c.mst.edges) < len(mrg) {
-		newEdge := c.mst.nearestVertice(mrg)
+	for len(c.mst.edges) < len(data) {
+		newEdge := c.mst.nearestVertice(rows, columns, data)
 		if newEdge.p1 == newEdge.p2 {
 			break
 		}
@@ -42,20 +44,22 @@ func (c *Clustering) buildMinSpanningTree() {
 // in the MST. Where "smallness" is found by finding the smallest
 // mutual-reachability between two points that is not already an edge in the
 // tree.
-func (t *tree) nearestVertice(mrg [][]float64) edge {
+func (t *tree) nearestVertice(rows, columns int, mrg []float64) edge {
 	minDist := math.MaxFloat64
 	p1Index := 0
 	p2Index := 0
 
-	for i := 0; i < len(mrg); i++ {
+	// for each row
+	for i := 0; i < rows; i++ {
 		// if point_i is NOT already a vertex in the mst
 		if !containsInt(t.vertices, i) {
 			// check distance between point_i and all points already in MST
 			for _, j := range t.vertices {
 				// if distance between point_i & vertice_j is the smallest-distance
 				// left in graph then this will become a new edge in the MST.
-				if minDist > mrg[i][j] {
-					minDist = mrg[i][j]
+				index := (i * columns) + j
+				if minDist > mrg[index] {
+					minDist = mrg[index]
 					p1Index = j
 					p2Index = i
 				}
@@ -64,7 +68,8 @@ func (t *tree) nearestVertice(mrg [][]float64) edge {
 	}
 
 	// create smallest-distance edge between mst vertice_j and point_i
-	return edge{p1: p1Index, p2: p2Index, dist: mrg[p1Index][p2Index]}
+	finalIndex := (p2Index * columns) + p1Index
+	return edge{p1: p1Index, p2: p2Index, dist: mrg[finalIndex]}
 }
 
 func (c *Clustering) extendMinSpanningTree() {

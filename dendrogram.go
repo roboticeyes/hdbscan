@@ -23,10 +23,17 @@ type link struct {
 func (c *Clustering) generateBaseLinks() edges {
 	var bases edges
 
-	for point, distances := range c.distanceMatrix.data {
-		minIndex, minValue := min(distances)
+	rows := len(c.distanceMatrix.data) / len(c.data)
+
+	// for each row: create a base edge
+	var row []float64
+	for i := 0; i < rows; i++ {
+		end := i + len(c.data)
+		row = c.distanceMatrix.data[i:end]
+
+		minIndex, minValue := min(row)
 		e := edge{
-			p1:   point,
+			p1:   i,
 			p2:   minIndex,
 			dist: minValue,
 		}

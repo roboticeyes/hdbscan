@@ -6,20 +6,20 @@ import (
 )
 
 type graph struct {
-	data [][]float64
+	data []float64
 	*sync.Mutex
 }
 
 func newGraph() *graph {
 	return &graph{
-		data:  make([][]float64, 0),
+		data:  make([]float64, 0),
 		Mutex: &sync.Mutex{},
 	}
 }
 
 func (g *graph) add(newData []float64) {
 	g.Lock()
-	g.data = append(g.data, newData)
+	g.data = append(g.data, newData...)
 	g.Unlock()
 }
 
@@ -54,25 +54,16 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) {
 	c.coreDistances = coreDistances
 
 	// mutualReachabililtyGraph
+	mutualReachabilityDistances := make([]float64, length, length)
 	for i := 0; i < length; i++ {
-		// c.sempahore <- true
-		// c.wg.Add(1)
-		// go func(i int) {
-		mutualReachabilityDistances := []float64{}
-
 		// the mutual reachability distance is the maximum of:
 		// point_1's core-distance, point_2's core-distance, or the distance between point_1 and point_2
 		for j := 0; j < length; j++ {
-			mutualReachabilityDistances = append(mutualReachabilityDistances, max([]float64{coreDistances[i], coreDistances[j], distanceMatrix.Get(i)[j]}))
+			mutualReachabilityDistances[j] = max([]float64{coreDistances[i], coreDistances[j], distanceMatrix.Get(i)[j]})
 		}
 
 		mutualReachabililtyGraph.add(mutualReachabilityDistances)
-
-		// 	<-c.sempahore
-		// 	c.wg.Done()
-		// }(i)
 	}
-	// c.wg.Wait()
 
 	c.distanceMatrix = mutualReachabililtyGraph
 }
