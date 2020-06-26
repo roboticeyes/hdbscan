@@ -2,6 +2,7 @@ package hdbscan
 
 import (
 	"math"
+	"sync"
 )
 
 type edge struct {
@@ -15,6 +16,27 @@ type edges []edge
 type tree struct {
 	vertices []int
 	edges    edges
+	*sync.Mutex
+}
+
+func newTree() *tree {
+	return &tree{
+		vertices: make([]int, 0),
+		edges:    make(edges, 0),
+		Mutex:    &sync.Mutex{},
+	}
+}
+
+func (t *tree) addVertice(vertice int) {
+	t.Lock()
+	defer t.Unlock()
+	t.vertices = append(t.vertices, vertice)
+}
+
+func (t *tree) addEdge(e edge) {
+	t.Lock()
+	defer t.Unlock()
+	t.edges = append(t.edges, e)
 }
 
 // the edges in the minimum spanning tree will be the minimum
@@ -23,7 +45,7 @@ type tree struct {
 // to each other relative to other points.
 func (c *Clustering) addRowToMinSpanningTree(row int, data []float64) {
 	if row == 0 {
-		c.mst.vertices = append(c.mst.vertices, 0)
+		c.mst.addVertice(0)
 	}
 
 	newEdge := c.mst.nearestVertice(row, data)
@@ -32,9 +54,8 @@ func (c *Clustering) addRowToMinSpanningTree(row int, data []float64) {
 	}
 
 	// add new point and new edge to mst
-	c.mst.vertices = append(c.mst.vertices, newEdge.p2)
-	c.mst.edges = append(c.mst.edges, newEdge)
-	c.extendMinSpanningTree()
+	c.mst.addVertice(newEdge.p2)
+	c.mst.addEdge(newEdge)
 }
 
 // nearestVertice will find the next smallest edge that is not already
@@ -47,6 +68,7 @@ func (t *tree) nearestVertice(row int, data []float64) edge {
 	p2Index := 0
 
 	if !containsInt(t.vertices, row) {
+		t.Lock()
 		// check distance between point_i and all points already in MST
 		for _, j := range t.vertices {
 			// if distance between point_i & vertice_j is the smallest-distance
@@ -57,18 +79,19 @@ func (t *tree) nearestVertice(row int, data []float64) edge {
 				p2Index = row
 			}
 		}
+		t.Unlock()
 	}
 
 	// create smallest-distance edge between mst vertice_j and point_i
 	return edge{p1: p1Index, p2: p2Index, dist: data[p1Index]}
 }
 
-func (c *Clustering) extendMinSpanningTree() {
+func (c *Clustering) extendMinSpanningTree(coreDistances []float64) {
 	for vertice := range c.mst.vertices {
 		newEdge := edge{
 			p1:   vertice,
 			p2:   vertice,
-			dist: c.coreDistances[vertice],
+			dist: coreDistances[vertice],
 		}
 		c.mst.edges = append(c.mst.edges, newEdge)
 	}

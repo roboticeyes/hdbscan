@@ -29,19 +29,18 @@ type clusters []*cluster
 // Clustering ...
 type Clustering struct {
 	data [][]float64
-	// distanceMatrix *graph
-	mcs int // minimum cluster size
+	// minimum cluster size
+	mcs int
 
 	// minimum spanning tree
-	minTree       bool
-	mst           *tree
-	coreDistances []float64
+	minTree bool
+	mst     *tree
 
 	// optimal-clustering
 	score    string
 	Clusters clusters
 
-	sempahore chan bool
+	semaphore chan bool
 	wg        *sync.WaitGroup
 }
 
@@ -64,12 +63,10 @@ func NewClustering(data [][]float64, minimumClusterSize int) (*Clustering, error
 	}
 
 	return &Clustering{
-		data: data,
-		mcs:  minimumClusterSize,
-		mst: &tree{
-			vertices: []int{},
-		},
-		sempahore: make(chan bool, runtime.NumCPU()),
+		data:      data,
+		mcs:       minimumClusterSize,
+		mst:       newTree(),
+		semaphore: make(chan bool, runtime.NumCPU()),
 		wg:        &sync.WaitGroup{},
 	}, nil
 }

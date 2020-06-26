@@ -10,23 +10,24 @@ type DistanceFunc func(x1, x2 []float64) float64
 
 // DistanceMatrix ...
 type DistanceMatrix struct {
-	data [][]float64
+	data map[int][]float64
 	*sync.Mutex
 }
 
 // NewDistanceMatrix ...
 func NewDistanceMatrix() *DistanceMatrix {
 	return &DistanceMatrix{
-		data:  make([][]float64, 0),
+		data:  make(map[int][]float64),
 		Mutex: &sync.Mutex{},
 	}
 }
 
 // Add ...
-func (d *DistanceMatrix) Add(newData []float64) {
+func (d *DistanceMatrix) Add(index int, newData []float64) {
 	d.Lock()
-	d.data = append(d.data, newData)
-	d.Unlock()
+	defer d.Unlock()
+	d.data[index] = newData
+	// d.data = append(d.data, newData)
 }
 
 // Get ...
