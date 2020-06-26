@@ -25,9 +25,8 @@ func (g *graph) add(newData []float64) {
 
 // the mutual reachability graph provides a mutual-reachability-distance matrix
 // which specifies a metric of how far a point is from another point.
-func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) {
-	length := len(c.data)
-	mutualReachabililtyGraph := newGraph()
+func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) edges {
+	var bases edges
 
 	// distance matrix
 	distanceMatrix := NewDistanceMatrix()
@@ -42,6 +41,7 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) {
 	}
 
 	// core distances = distance from point to its mcs-1 nearest-neighbor
+	length := len(c.data)
 	coreDistances := []float64{}
 	for i := 0; i < length; i++ {
 		pointDistances := []float64{}
@@ -62,8 +62,24 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) {
 			mutualReachabilityDistances[j] = max([]float64{coreDistances[i], coreDistances[j], distanceMatrix.Get(i)[j]})
 		}
 
-		mutualReachabililtyGraph.add(mutualReachabilityDistances)
+		if c.minTree {
+			c.addRowToMinSpanningTree(i, mutualReachabilityDistances)
+		} else {
+			minIndex, minValue := min(mutualReachabilityDistances)
+			e := edge{
+				p1:   i,
+				p2:   minIndex,
+				dist: minValue,
+			}
+			bases = append(bases, e)
+		}
 	}
 
-	c.distanceMatrix = mutualReachabililtyGraph
+	if c.minTree {
+		bases = c.mst.edges
+	}
+
+	sort.Sort(bases)
+
+	return bases
 }

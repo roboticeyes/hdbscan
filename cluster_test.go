@@ -48,10 +48,7 @@ func TestMinimumSpanningTree(t *testing.T) {
 	clustering.minTree = true
 
 	// graph
-	clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree()
-
-	fmt.Println(clustering.mst.edges)
+	fmt.Println(clustering.mutualReachabilityGraph(EuclideanDistance))
 }
 
 func TestBuildDendrogram(t *testing.T) {
@@ -60,12 +57,8 @@ func TestBuildDendrogram(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 
-	// graph
-	clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree()
-
 	// cluster-hierarchy
-	dendrogram := clustering.buildDendrogram()
+	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph(EuclideanDistance))
 
 	for _, link := range dendrogram {
 		t.Logf("Link %+v with points: %+v", link.id, link.points)
@@ -78,12 +71,8 @@ func TestBuildClusters(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 
-	// graph
-	clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree()
-
 	// cluster-hierarchy
-	dendrogram := clustering.buildDendrogram()
+	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph(EuclideanDistance))
 	clustering.buildClusters(dendrogram)
 
 	for _, cluster := range clustering.Clusters {
@@ -98,12 +87,8 @@ func TestClusterScoring(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 
-	// graph
-	clustering.mutualReachabilityGraph(EuclideanDistance)
-	clustering.buildMinSpanningTree()
-
 	// cluster-hierarchy
-	dendrogram := clustering.buildDendrogram()
+	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph(EuclideanDistance))
 	clustering.buildClusters(dendrogram)
 	clustering.scoreClusters(VarianceScore)
 
@@ -120,6 +105,23 @@ func TestClustering(t *testing.T) {
 	}
 
 	err = clustering.Run(EuclideanDistance, VarianceScore, true)
+	if err != nil {
+		t.Errorf("clustering run error: %+v", err)
+	}
+
+	for _, cluster := range clustering.Clusters {
+		sort.Ints(cluster.Points)
+		t.Logf("Cluster %+v with points: %+v", cluster.id, cluster.Points)
+	}
+}
+
+func TestClusteringNoTree(t *testing.T) {
+	clustering, err := NewClustering(data, minimumClusterSize)
+	if err != nil {
+		t.Errorf("clustering creation error: %+v", err)
+	}
+
+	err = clustering.Run(EuclideanDistance, VarianceScore, false)
 	if err != nil {
 		t.Errorf("clustering run error: %+v", err)
 	}

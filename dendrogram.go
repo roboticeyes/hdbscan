@@ -1,9 +1,5 @@
 package hdbscan
 
-import (
-	"sort"
-)
-
 type node struct {
 	key             int
 	parentKey       int
@@ -20,38 +16,7 @@ type link struct {
 	descendantCount int
 }
 
-func (c *Clustering) generateBaseLinks() edges {
-	var bases edges
-
-	rows := len(c.distanceMatrix.data) / len(c.data)
-
-	// for each row: create a base edge
-	var row []float64
-	for i := 0; i < rows; i++ {
-		end := i + len(c.data)
-		row = c.distanceMatrix.data[i:end]
-
-		minIndex, minValue := min(row)
-		e := edge{
-			p1:   i,
-			p2:   minIndex,
-			dist: minValue,
-		}
-		bases = append(bases, e)
-	}
-
-	return bases
-}
-
-func (c *Clustering) buildDendrogram() []*link {
-	var baseEdges edges
-	if c.minTree {
-		baseEdges = c.mst.edges
-	} else {
-		baseEdges = c.generateBaseLinks()
-	}
-	sort.Sort(baseEdges)
-
+func (c *Clustering) buildDendrogram(baseEdges edges) []*link {
 	var links []*link
 	for _, e := range baseEdges {
 		var p1TopLink *link
