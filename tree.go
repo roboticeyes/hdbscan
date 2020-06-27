@@ -28,14 +28,10 @@ func newTree() *tree {
 }
 
 func (t *tree) addVertice(vertice int) {
-	t.Lock()
-	defer t.Unlock()
 	t.vertices = append(t.vertices, vertice)
 }
 
 func (t *tree) addEdge(e edge) {
-	t.Lock()
-	defer t.Unlock()
 	t.edges = append(t.edges, e)
 }
 
@@ -43,12 +39,15 @@ func (t *tree) addEdge(e edge) {
 // mutual-reachability distances between any two connected points.
 // where no two points are connected by an edge unless they are closest
 // to each other relative to other points.
-func (c *Clustering) addRowToMinSpanningTree(row int, data []float64) {
-	if row == 0 {
-		c.mst.addVertice(0)
+func (c *Clustering) addRowToMinSpanningTree(row int, distances []float64) {
+	c.mst.Lock()
+	defer c.mst.Unlock()
+
+	if len(c.mst.vertices) == 0 {
+		c.mst.addVertice(row)
 	}
 
-	newEdge := c.mst.nearestVertice(row, data)
+	newEdge := c.mst.nearestVertice(row, distances)
 	if newEdge.p1 == newEdge.p2 {
 		return
 	}
@@ -62,39 +61,26 @@ func (c *Clustering) addRowToMinSpanningTree(row int, data []float64) {
 // in the MST. Where "smallness" is found by finding the smallest
 // mutual-reachability between two points that is not already an edge in the
 // tree.
-func (t *tree) nearestVertice(row int, data []float64) edge {
+func (t *tree) nearestVertice(row int, distances []float64) edge {
 	minDist := math.MaxFloat64
 	p1Index := 0
 	p2Index := 0
 
 	if !containsInt(t.vertices, row) {
-		t.Lock()
 		// check distance between point_i and all points already in MST
 		for _, j := range t.vertices {
 			// if distance between point_i & vertice_j is the smallest-distance
 			// left in graph then this will become a new edge in the MST.
-			if minDist > data[j] {
-				minDist = data[j]
+			if minDist > distances[j] {
+				minDist = distances[j]
 				p1Index = j
 				p2Index = row
 			}
 		}
-		t.Unlock()
 	}
 
 	// create smallest-distance edge between mst vertice_j and point_i
-	return edge{p1: p1Index, p2: p2Index, dist: data[p1Index]}
-}
-
-func (c *Clustering) extendMinSpanningTree(coreDistances []float64) {
-	for vertice := range c.mst.vertices {
-		newEdge := edge{
-			p1:   vertice,
-			p2:   vertice,
-			dist: coreDistances[vertice],
-		}
-		c.mst.edges = append(c.mst.edges, newEdge)
-	}
+	return edge{p1: p1Index, p2: p2Index, dist: distances[p1Index]}
 }
 
 // Len ...

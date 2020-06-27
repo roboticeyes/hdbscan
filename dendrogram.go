@@ -1,5 +1,7 @@
 package hdbscan
 
+import "log"
+
 type node struct {
 	key             int
 	parentKey       int
@@ -17,6 +19,10 @@ type link struct {
 }
 
 func (c *Clustering) buildDendrogram(baseEdges edges) []*link {
+	if c.verbose {
+		log.Println("starting dendrogram")
+	}
+
 	var links []*link
 	for _, e := range baseEdges {
 		var p1TopLink *link
@@ -107,6 +113,10 @@ func (c *Clustering) buildDendrogram(baseEdges edges) []*link {
 
 			links = append(links, &newLink)
 		}
+	}
+
+	if c.verbose {
+		log.Println("finished dendrogram")
 	}
 
 	return links

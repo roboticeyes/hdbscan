@@ -1,6 +1,12 @@
 package hdbscan
 
+import "log"
+
 func (c *Clustering) selectOptimalClustering(score string) {
+	if c.verbose {
+		log.Println("selecting optimal clusters")
+	}
+
 	switch score {
 	case VarianceScore:
 		c.setVarianceDeltas()
@@ -16,6 +22,10 @@ func (c *Clustering) selectOptimalClustering(score string) {
 	}
 
 	c.Clusters = finalClusters
+
+	if c.verbose {
+		log.Println("finished selecting optimal clusters")
+	}
 }
 
 func (c *Clustering) setVarianceDeltas() {
@@ -24,7 +34,6 @@ func (c *Clustering) setVarianceDeltas() {
 		// calculate average childrens scores
 		var avgScore float64
 		for _, child := range cluster.children {
-			// calculate childrens scores
 			avgScore += c.Clusters.getClusterByID(child).score
 		}
 		avgScore /= float64(len(cluster.children))

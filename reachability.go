@@ -1,18 +1,23 @@
 package hdbscan
 
 import (
+	"log"
 	"sort"
 )
 
 // the mutual reachability graph provides a mutual-reachability-distance matrix
 // which specifies a metric of how far a point is from another point.
 func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) edges {
+	if c.verbose {
+		log.Println("starting mutual reachability")
+	}
+
 	// core-distances
 	length := len(c.data)
 	coreDistances := make([]float64, length, length)
 	for i, p1 := range c.data {
-		c.semaphore <- true
 		c.wg.Add(1)
+		c.semaphore <- true
 		go func(i int, p1 []float64) {
 			pointDistances := []float64{}
 			for _, p2 := range c.data {
@@ -28,8 +33,8 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) edges {
 
 	// mutual-reachability distances
 	for i := 0; i < length; i++ {
-		c.semaphore <- true
 		c.wg.Add(1)
+		c.semaphore <- true
 		go func(i int) {
 			mutualReachabilityDistances := make([]float64, length, length)
 			// the mutual reachability distance is the maximum of:
@@ -57,11 +62,11 @@ func (c *Clustering) mutualReachabilityGraph(distanceFunc DistanceFunc) edges {
 	}
 	c.wg.Wait()
 
-	if c.minTree {
-		c.extendMinSpanningTree(coreDistances)
-	}
-
 	sort.Sort(c.mst.edges)
+
+	if c.verbose {
+		log.Println("finished mutual reachability")
+	}
 
 	return c.mst.edges
 }
