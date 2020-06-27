@@ -23,14 +23,16 @@ func main() {
         []float64{3,2,1},
     }
     minimumClusterSize := len(data)
-    
+    minimumSpanningTree := true
+
+    // create
     clustering := hdbscan.NewClustering(data, minimumClusterSize)
 
     // options
     clustering = clustering.Verbose().Voronoi()
 
-    // the final boolean argument is: minimum-spanning-tree argument
-    clustering.Run(hdbscan.EuclideanDistance, hdbscan.VarianceScore, true)
+    //run
+    clustering.Run(hdbscan.EuclideanDistance, hdbscan.VarianceScore, minimumSpanningTree)
 }
 ```
 
