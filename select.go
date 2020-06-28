@@ -1,6 +1,9 @@
 package hdbscan
 
-import "log"
+import (
+	"log"
+	"sort"
+)
 
 func (c *Clustering) selectOptimalClustering(score string) {
 	if c.verbose {
@@ -29,7 +32,9 @@ func (c *Clustering) selectOptimalClustering(score string) {
 }
 
 func (c *Clustering) setVarianceDeltas() {
-	// var one bool
+	// sort clusters by size
+	sort.Sort(c.Clusters)
+
 	for _, cluster := range c.Clusters {
 		// calculate average childrens scores
 		var avgScore float64
@@ -43,43 +48,13 @@ func (c *Clustering) setVarianceDeltas() {
 		} else {
 			cluster.delta = 1
 
-			// check if any subclusters are already delta-1
-			var subDeltaOne bool
+			// set sub-clusters to 0
 			subClusters := c.Clusters.subTree(cluster.id)
 			for _, subCluster := range subClusters {
-				if subCluster.delta == 1 {
-					subDeltaOne = true
-				}
-			}
-
-			if subDeltaOne {
-				cluster.delta = 0
-
-				// set parents to 0
-				parents := c.Clusters.allParents(cluster)
-				for _, parent := range parents {
-					parent.delta = 0
-				}
-			}
-
-			if cluster.parent != nil {
-				// if parent already calculated to be better
-				if c.Clusters.getClusterByID(*cluster.parent).delta == 1 {
-					cluster.delta = 0
-				}
+				subCluster.delta = 0
 			}
 		}
 	}
-}
-
-func (c clusters) root() *cluster {
-	for _, cluster := range c {
-		if cluster.parent == nil {
-			return cluster
-		}
-	}
-
-	return nil
 }
 
 func (c clusters) leaves() clusters {

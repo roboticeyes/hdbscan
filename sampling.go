@@ -42,6 +42,9 @@ func (c *Clustering) randomSampling(percentage float64) *Clustering {
 	return c
 }
 
+// TODO: Voronoi should not be nearest cluster centroid
+// TODO: it should be nearest cluster point
+
 // Subsampling will take the first 'n' data points and perform clustering on
 // those. 'n' is a provided argument and should be between 0 and the total data size.
 // Voronoi clustering will be performed after the clusters have been found for all points

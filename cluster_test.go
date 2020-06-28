@@ -29,11 +29,11 @@ var (
 		// cluster-3 (16-23)
 		[]float64{80, 85, 90},
 		[]float64{89, 90, 91},
-		[]float64{100, 100, 100},
+		[]float64{100, 100, 100}, // possible outlier
 		[]float64{90, 90, 90},
 		[]float64{81, 85, 90},
 		[]float64{89, 91, 91},
-		[]float64{100, 101, 100},
+		[]float64{100, 101, 100}, // possible outlier
 		[]float64{90, 91, 90},
 		// outlier
 		[]float64{-2400, 2000, -30},
@@ -177,12 +177,15 @@ func TestClusteringOutliers(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 
+	c = c.OutlierDetection().NearestNeighbor()
+
 	err = c.Run(EuclideanDistance, VarianceScore, true)
 	if err != nil {
 		t.Errorf("clustering run error: %+v", err)
 	}
 
 	for _, cluster := range c.Clusters {
+		sort.Ints(cluster.Points)
 		t.Logf("Cluster %+v with Points %+v and outliers: %+v", cluster.id, cluster.Points, cluster.Outliers)
 	}
 }
