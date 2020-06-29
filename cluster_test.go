@@ -46,10 +46,11 @@ func TestMinimumSpanningTree(t *testing.T) {
 	if err != nil {
 		t.Errorf("clustering creation error: %+v", err)
 	}
+	clustering.distanceFunc = EuclideanDistance
 	clustering.minTree = true
 
 	// graph
-	fmt.Println(clustering.mutualReachabilityGraph(EuclideanDistance))
+	fmt.Println(clustering.mutualReachabilityGraph())
 }
 
 func TestBuildDendrogram(t *testing.T) {
@@ -57,10 +58,11 @@ func TestBuildDendrogram(t *testing.T) {
 	if err != nil {
 		t.Errorf("clustering creation error: %+v", err)
 	}
+	clustering.distanceFunc = EuclideanDistance
 	clustering.minTree = true
 
 	// cluster-hierarchy
-	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph(EuclideanDistance))
+	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph())
 
 	for _, link := range dendrogram {
 		t.Logf("Link %+v with points: %+v", link.id, link.points)
@@ -72,10 +74,11 @@ func TestBuildClusters(t *testing.T) {
 	if err != nil {
 		t.Errorf("clustering creation error: %+v", err)
 	}
+	clustering.distanceFunc = EuclideanDistance
 	// clustering.minTree = true
 
 	// cluster-hierarchy
-	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph(EuclideanDistance))
+	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph())
 	clustering.buildClusters(dendrogram)
 
 	for _, cluster := range clustering.Clusters {
@@ -89,9 +92,10 @@ func TestClusterScoring(t *testing.T) {
 	if err != nil {
 		t.Errorf("clustering creation error: %+v", err)
 	}
+	clustering.distanceFunc = EuclideanDistance
 
 	// cluster-hierarchy
-	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph(EuclideanDistance))
+	dendrogram := clustering.buildDendrogram(clustering.mutualReachabilityGraph())
 	clustering.buildClusters(dendrogram)
 	clustering.scoreClusters(VarianceScore)
 
@@ -171,6 +175,52 @@ func TestClusteringSampling(t *testing.T) {
 	}
 }
 
+func TestClusteringSamplingAndAssign(t *testing.T) {
+	c, err := NewClustering(data, minimumClusterSize)
+	if err != nil {
+		t.Errorf("clustering creation error: %+v", err)
+	}
+	c = c.Subsampling(16).OutlierDetection()
+
+	err = c.Run(EuclideanDistance, VarianceScore, true)
+	if err != nil {
+		t.Errorf("clustering run error: %+v", err)
+	}
+
+	newClustering, err := c.Assign(data)
+	if err != nil {
+		t.Errorf("clustering run error: %+v", err)
+	}
+
+	for _, cluster := range newClustering.Clusters {
+		sort.Ints(cluster.Points)
+		t.Logf("Cluster %+v with points: %+v", cluster.id, cluster.Points)
+	}
+}
+
+func TestClusteringSamplingAndAssignAndOutlierClustering(t *testing.T) {
+	c, err := NewClustering(data, minimumClusterSize)
+	if err != nil {
+		t.Errorf("clustering creation error: %+v", err)
+	}
+	c = c.Subsampling(16).NearestNeighbor().OutlierClustering()
+
+	err = c.Run(EuclideanDistance, VarianceScore, true)
+	if err != nil {
+		t.Errorf("clustering run error: %+v", err)
+	}
+
+	newClustering, err := c.Assign(data)
+	if err != nil {
+		t.Errorf("clustering run error: %+v", err)
+	}
+
+	for _, cluster := range newClustering.Clusters {
+		sort.Ints(cluster.Points)
+		t.Logf("Cluster %+v with points: %+v", cluster.id, cluster.Points)
+	}
+}
+
 func TestClusteringOutliers(t *testing.T) {
 	c, err := NewClustering(data, minimumClusterSize)
 	if err != nil {
@@ -214,9 +264,10 @@ func TestClusteringVoronoiParts(t *testing.T) {
 		t.Errorf("clustering creation error: %+v", err)
 	}
 	c = c.Verbose().Voronoi()
+	c.distanceFunc = EuclideanDistance
 	c.minTree = true
 
-	edges := c.mutualReachabilityGraph(EuclideanDistance)
+	edges := c.mutualReachabilityGraph()
 	t.Logf("%+v\n", edges)
 	dendrogram := c.buildDendrogram(edges)
 	for _, link := range dendrogram {
@@ -247,7 +298,7 @@ func TestClusteringVoronoiParts(t *testing.T) {
 		t.Logf("Cluster %+v with variance %+v and score %+v and points: %+v and Centroid %+v", cluster.id, cluster.variance, cluster.score, cluster.Points, cluster.Centroid)
 	}
 
-	c.outliersAndVoronoi(EuclideanDistance)
+	c.outliersAndVoronoi()
 	for _, cluster := range c.Clusters {
 		sort.Ints(cluster.Points)
 		t.Logf("Cluster %+v with variance %+v and score %+v and points: %+v and Centroid %+v", cluster.id, cluster.variance, cluster.score, cluster.Points, cluster.Centroid)

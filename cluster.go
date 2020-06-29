@@ -19,17 +19,24 @@ var (
 )
 
 type cluster struct {
-	id       int
+	id int
+
 	parent   *int
 	children []int
-	Centroid []float64
-	Points   []int
-	Outliers Outliers
+
 	score    float64
 	delta    int
 	size     float64
 	variance float64
 	lMin     float64
+
+	distanceDistribution *distuv.Normal
+	largestDistance      float64
+
+	//public
+	Centroid []float64
+	Points   []int
+	Outliers Outliers
 }
 
 type clusters []*cluster
@@ -59,6 +66,9 @@ type Clustering struct {
 	voronoi      bool
 	nn           bool
 	od           bool
+	oc           bool
+	sampleBound  int
+	distanceFunc DistanceFunc
 
 	// minimum spanning tree
 	mst *tree
@@ -103,59 +113,21 @@ func NewClustering(data [][]float64, minimumClusterSize int) (*Clustering, error
 
 // Run will run the clustering.
 func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) error {
+	c.distanceFunc = distanceFunc
 	c.minTree = mst
 	if c.verbose && !c.minTree {
 		log.Println("not using minimum spanning tree")
 	}
 
-	edges := c.mutualReachabilityGraph(distanceFunc)
-	dendrogram := c.buildDendrogram(edges)
-	c.buildClusters(dendrogram)
+	c.sample()
+	c.buildClusters(c.buildDendrogram(c.mutualReachabilityGraph()))
 	c.scoreClusters(score)
 	c.selectOptimalClustering(score)
 	c.clusterCentroids()
-	c.outliersAndVoronoi(distanceFunc)
+	c.outliersAndVoronoi()
+	c.outlierClustering()
 
 	return nil
-}
-
-// OutlierDetection will track all unassigned
-// points as outliers of their nearest cluster.
-// It provides a `NormalizedDistance` value for
-// each outlier which can be interpreted as the
-// probability of the point being an outlier
-// (relative to all other outliers).
-func (c *Clustering) OutlierDetection() *Clustering {
-	c.od = true
-	return c
-}
-
-// Verbose will set verbosity to true for clustering process
-// and the internals of a clustering run will be logged to stdout.
-func (c *Clustering) Verbose() *Clustering {
-	c.verbose = true
-	return c
-}
-
-// Voronoi will set voronoi-clustering to true, and
-// after density clustering is performed,
-// all points not assigned to a cluster will be placed
-// into their nearest cluster (by centroid distance).
-func (c *Clustering) Voronoi() *Clustering {
-	c.voronoi = true
-	return c
-}
-
-// NearestNeighbor specifies if nearest-neighbor
-// distances should be used for outlier detection
-// and for voronoi clustering instead of centroid-based
-// distances.
-// NearestNeighbor will find the closest assigned data
-// point to an unassigned data point and consider the
-// unassigned data point to be of that same cluster (as an outlier and/or a point).
-func (c *Clustering) NearestNeighbor() *Clustering {
-	c.nn = true
-	return c
 }
 
 // the clusters hierarchy will not contain clusters that are smaller than the minimum cluster size
@@ -239,8 +211,12 @@ func (c *Clustering) clusterCentroids() {
 	}
 }
 
-func (c *Clustering) outliersAndVoronoi(distanceFunc DistanceFunc) {
+func (c *Clustering) outliersAndVoronoi() {
 	if !c.od && !c.voronoi {
+		return
+	}
+
+	if len(c.Clusters) == 0 {
 		return
 	}
 
@@ -276,14 +252,14 @@ func (c *Clustering) outliersAndVoronoi(distanceFunc DistanceFunc) {
 			for i, cluster := range c.Clusters {
 				if c.nn {
 					for _, p := range cluster.Points {
-						distance := distanceFunc(c.data[p], v)
+						distance := c.distanceFunc(c.data[p], v)
 						if distance < minDistance {
 							minDistance = distance
 							nearestClusterIndex = i
 						}
 					}
 				} else {
-					distance := distanceFunc(cluster.Centroid, v)
+					distance := c.distanceFunc(cluster.Centroid, v)
 					if distance < minDistance {
 						minDistance = distance
 						nearestClusterIndex = i
@@ -292,12 +268,12 @@ func (c *Clustering) outliersAndVoronoi(distanceFunc DistanceFunc) {
 			}
 
 			// voronoi cluster
-			if c.voronoi && len(c.Clusters) > 0 {
+			if c.voronoi {
 				c.Clusters[nearestClusterIndex].Points = append(c.Clusters[nearestClusterIndex].Points, i)
 			}
 
 			// outlier detection
-			if c.od && len(c.Clusters) > 0 {
+			if c.od {
 				c.Clusters[nearestClusterIndex].Outliers = append(c.Clusters[nearestClusterIndex].Outliers, Outlier{
 					Index:              i,
 					NormalizedDistance: minDistance,
@@ -308,31 +284,13 @@ func (c *Clustering) outliersAndVoronoi(distanceFunc DistanceFunc) {
 
 	// normalize outlier distances
 	if c.od {
-		for i, cluster := range c.Clusters {
-			if len(cluster.Outliers) == 0 {
-				continue
-			}
+		c.distanceDistributions()
 
-			// distance distribution
-			var distances []float64
-			for j1, p1 := range cluster.Points {
-				for j2, p2 := range cluster.Points {
-					if j1 != j2 {
-						distance := distanceFunc(c.data[p1], c.data[p2])
-						distances = append(distances, distance)
-					}
-				}
-			}
-
-			dd := distuv.Normal{}
-			dd.Fit(distances, nil)
-
+		for _, cluster := range c.Clusters {
 			for j, outlier := range cluster.Outliers {
-				outlier.NormalizedDistance = isNum(dd.CDF(outlier.NormalizedDistance))
+				outlier.NormalizedDistance = isNum(cluster.distanceDistribution.CDF(outlier.NormalizedDistance))
 				cluster.Outliers[j] = outlier
 			}
-
-			c.Clusters[i] = cluster
 		}
 	}
 
@@ -344,6 +302,45 @@ func (c *Clustering) outliersAndVoronoi(distanceFunc DistanceFunc) {
 		if c.voronoi {
 			log.Println("finished voronoi clustering")
 		}
+	}
+}
+
+func (c *Clustering) distanceDistributions() {
+	for i, cluster := range c.Clusters {
+		// distance distribution
+		ld := float64(math.MinInt64)
+		var distances []float64
+		for j1, p1 := range cluster.Points {
+			if c.nn {
+				minDistance := math.MaxFloat64
+				for j2, p2 := range cluster.Points {
+					if j1 != j2 {
+						distance := c.distanceFunc(c.data[p1], c.data[p2])
+						if distance < minDistance {
+							minDistance = distance
+						}
+					}
+				}
+				distances = append(distances, minDistance)
+
+				// largest NN-distance
+				if minDistance > ld {
+					ld = minDistance
+				}
+			} else {
+				distance := c.distanceFunc(c.data[p1], cluster.Centroid)
+				distances = append(distances, distance)
+				if distance > ld {
+					ld = distance
+				}
+			}
+		}
+		dd := &distuv.Normal{}
+		dd.Fit(distances, nil)
+		cluster.distanceDistribution = dd
+		cluster.largestDistance = ld
+
+		c.Clusters[i] = cluster
 	}
 }
 
@@ -370,4 +367,55 @@ func (c clusters) Swap(i, j int) {
 // Less ...
 func (c clusters) Less(i, j int) bool {
 	return len(c[i].Points) < len(c[j].Points)
+}
+
+func (c clusters) maxID() int {
+	var maxID int
+	for _, clust := range c {
+		if clust.id > maxID {
+			maxID = clust.id
+		}
+	}
+
+	return maxID
+}
+
+// MinProb ...
+func (o Outliers) MinProb() Outlier {
+	minProb := float64(1)
+	var ol Outlier
+
+	for _, v := range o {
+		if v.NormalizedDistance <= minProb {
+			minProb = v.NormalizedDistance
+			ol = v
+		}
+	}
+
+	return ol
+}
+
+func (c *Clustering) outlierClustering() {
+	if !c.oc {
+		return
+	}
+
+	maxID := c.Clusters.maxID()
+	var newClusters clusters
+	for i, clust := range c.Clusters {
+		if len(clust.Outliers) >= c.mcs {
+			newCluster := &cluster{
+				id:     i + maxID + 1,
+				Points: make([]int, 0),
+			}
+
+			for _, o := range clust.Outliers {
+				newCluster.Points = append(newCluster.Points, o.Index)
+			}
+
+			newClusters = append(newClusters, newCluster)
+		}
+	}
+
+	c.Clusters = append(c.Clusters, newClusters...)
 }
