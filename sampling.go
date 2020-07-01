@@ -44,6 +44,10 @@ func (c *Clustering) sample() {
 // and the data points outside of the sample need to be assigned to a cluster
 // as well.
 func (c *Clustering) Assign(data [][]float64) (*Clustering, error) {
+	if c.verbose {
+		log.Println("assigning data")
+	}
+
 	newClustering, err := NewClustering(data, c.mcs)
 	if err != nil {
 		return newClustering, err
@@ -125,6 +129,10 @@ func (c *Clustering) Assign(data [][]float64) (*Clustering, error) {
 
 	// outlier-clustering
 	newClustering.outlierClustering()
+
+	if c.verbose {
+		log.Println("finished assigning data")
+	}
 
 	return newClustering, nil
 }
