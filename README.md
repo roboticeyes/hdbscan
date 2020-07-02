@@ -26,10 +26,13 @@ func main() {
     minimumSpanningTree := true
 
     // create
-    clustering := hdbscan.NewClustering(data, minimumClusterSize)
+    clustering, err := hdbscan.NewClustering(data, minimumClusterSize)
+    if err != nil {
+        panic(err)
+    }
 
     // options
-    clustering = clustering.Verbose().Voronoi()
+    clustering = clustering.Verbose().OutlierDetection()
 
     //run
     clustering.Run(hdbscan.EuclideanDistance, hdbscan.VarianceScore, minimumSpanningTree)
