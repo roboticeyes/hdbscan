@@ -65,7 +65,6 @@ func (c *Clustering) addRowToMinSpanningTree(row int, distances []float64) {
 	if newEdge.p1 == newEdge.p2 {
 		return
 	}
-
 	// add new point and new edge to mst
 	c.mst.addVertice(newEdge.p2)
 	c.mst.addEdge(newEdge)

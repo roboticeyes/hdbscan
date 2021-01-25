@@ -19,6 +19,7 @@ import (
 
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
 // GeneralizedVariance will return the determinant of the covariance matrix
@@ -30,4 +31,43 @@ func GeneralizedVariance(rows, columns int, data []float64) float64 {
 	stat.CovarianceMatrix(covMatrix, matrix, nil)
 	det, _ := mat.LogDet(covMatrix)
 	return math.Abs(det)
+}
+
+func (c *Clustering) distanceDistributions() {
+	for i, cluster := range c.Clusters {
+		// distance distribution
+		ld := float64(math.MinInt64)
+		var distances []float64
+		for j1, p1 := range cluster.Points {
+			if c.nn {
+				minDistance := math.MaxFloat64
+				for j2, p2 := range cluster.Points {
+					if j1 != j2 {
+						distance := c.distanceFunc(c.data[p1], c.data[p2])
+						if distance < minDistance {
+							minDistance = distance
+						}
+					}
+				}
+				distances = append(distances, minDistance)
+
+				// largest NN-distance
+				if minDistance > ld {
+					ld = minDistance
+				}
+			} else {
+				distance := c.distanceFunc(c.data[p1], cluster.Centroid)
+				distances = append(distances, distance)
+				if distance > ld {
+					ld = distance
+				}
+			}
+		}
+		dd := &distuv.Normal{}
+		dd.Fit(distances, nil)
+		cluster.distanceDistribution = dd
+		cluster.largestDistance = ld
+
+		c.Clusters[i] = cluster
+	}
 }

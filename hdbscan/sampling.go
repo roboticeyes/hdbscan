@@ -18,34 +18,10 @@ import (
 	"errors"
 	"log"
 	"math"
-	"math/rand"
 )
 
 func (c *Clustering) sample() {
-	if c.randomSample {
-		if c.verbose {
-			log.Println("randomly sampling data")
-		}
-
-		var newData [][]float64
-		for _, v := range c.data {
-			if rand.Intn(100) < c.sampleBound {
-				newData = append(newData, v)
-			}
-		}
-
-		c.data = newData
-	} else if c.subSample {
-		if c.verbose {
-			log.Println("sub-sampling data")
-		}
-
-		c.data = c.data[:c.sampleBound]
-	}
-
-	if c.verbose {
-		log.Println("finished sampling data")
-	}
+	return
 }
 
 // Assign will assign a list of data points to an existing cluster.
@@ -62,7 +38,7 @@ func (c *Clustering) Assign(data [][]float64) (*Clustering, error) {
 		log.Println("assigning data")
 	}
 
-	newClustering, err := NewClustering(data, c.mcs)
+	newClustering, err := NewClustering(data, c.mcs, c.directory)
 	if err != nil {
 		return newClustering, err
 	}

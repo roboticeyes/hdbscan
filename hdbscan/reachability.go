@@ -26,16 +26,21 @@ func (c *Clustering) mutualReachabilityGraph() edges {
 		log.Println("starting mutual reachability")
 	}
 
+	lambda := make([][]float64, len(c.data))
 	// core-distances
 	length := len(c.data)
 	coreDistances := make([]float64, length, length)
 	for i, p1 := range c.data {
+		lambda[i] = make([]float64, len(c.data))
 		c.wg.Add(1)
 		c.semaphore <- true
 		go func(i int, p1 []float64) {
 			pointDistances := []float64{}
-			for _, p2 := range c.data {
-				pointDistances = append(pointDistances, c.distanceFunc(p1, p2))
+			for ii, p2 := range c.data {
+				dist := c.distanceFunc(p1, p2)
+				pointDistances = append(pointDistances, dist)
+				// Transform in lambda
+				lambda[i][ii] = (1 / dist)
 			}
 			sort.Float64s(pointDistances)
 			coreDistances[i] = pointDistances[c.mcs-1]
@@ -43,6 +48,7 @@ func (c *Clustering) mutualReachabilityGraph() edges {
 			c.wg.Done()
 		}(i, p1)
 	}
+	c.lambda = lambda
 	c.wg.Wait()
 
 	// mutual-reachability distances
@@ -53,6 +59,7 @@ func (c *Clustering) mutualReachabilityGraph() edges {
 			mutualReachabilityDistances := make([]float64, length, length)
 			// the mutual reachability distance is the maximum of:
 			// point_1's core-distance, point_2's core-distance, or the distance between point_1 and point_2
+			// max{dcore(xp),dcore(xq),d(xp,xq)}
 			for j := 0; j < length; j++ {
 				mutualReachabilityDistances[j] = max([]float64{coreDistances[i], coreDistances[j], c.distanceFunc(c.data[i], c.data[j])})
 			}

@@ -63,38 +63,3 @@ func (c *Clustering) OutlierClustering() *Clustering {
 	c.oc = true
 	return c
 }
-
-// Subsample will take the first 'n' data points and perform clustering on
-// those. 'n' is a provided argument and should be between 0 and the total data size.
-// Voronoi clustering will be performed after the clusters have been found for all points
-// that are not in the subsample.
-func (c *Clustering) Subsample(n int) *Clustering {
-	if n < 0 || n > len(c.data) {
-		n = len(c.data)
-	}
-	c.sampleBound = n
-	c.subSample = true
-
-	return c
-}
-
-// randomSampling ...  (DO NOT USE!)
-// will process a random sample of the total provided data.
-// The amount of data in the sample is based on the percentage (0-1) argument provided.
-// Randomly sampled data will also automatically perform a Voronoi clustering for
-// all data points by using the centroids of the clusters generated from the sample.
-// In other words, the final result may not be as of high quality as on a different sample
-// or the entire dataset.
-func (c *Clustering) randomSampling(percentage float64) *Clustering {
-	// if percentage is not valid: process total data
-	if percentage < 0 || percentage > 1 {
-		percentage = 1
-	}
-
-	bound := int(percentage * 100)
-	c.sampleBound = bound
-
-	c.randomSample = true
-
-	return c
-}

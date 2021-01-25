@@ -91,3 +91,54 @@ func containsInt(list []int, i int) bool {
 
 	return false
 }
+
+// Len ...
+func (c clusters) Len() int {
+	return len(c)
+}
+
+// Swap ...
+func (c clusters) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+// Less ...
+func (c clusters) Less(i, j int) bool {
+	return len(c[i].Points) < len(c[j].Points)
+}
+
+func (c clusters) maxID() int {
+	var maxID int
+	for _, clust := range c {
+		if clust.id > maxID {
+			maxID = clust.id
+		}
+	}
+
+	return maxID
+}
+
+func (c clusters) getClusterByID(id int) *cluster {
+	for _, cluster := range c {
+		if cluster.id == id {
+			return cluster
+		}
+	}
+
+	return nil
+}
+
+// MinProb ...
+func (o Outliers) MinProb() Outlier {
+	minProb := float64(1)
+	var ol Outlier
+
+	for _, v := range o {
+		if v.NormalizedDistance <= minProb {
+			minProb = v.NormalizedDistance
+			ol = v
+		}
+	}
+
+	return ol
+}
