@@ -4,44 +4,10 @@ HDBSCAN algorithm implementation in golang.
 
 Written to run concurrently on CPU (uses all CPU cores by default).
 
-A re-write of code started by the brilliant developer Edouard Belval at https://github.com/Belval/hdbscan  ... although it has changed quite a lot from the original.
+This repository uses the great hdbscan algorithm from Humility AI (https://github.com/humilityai/hdbscan.git) and has been extended with some features.
+Further description follows!
 
-## Download
-
-`go get -u github.com/humilityai/hdbscan`
-
-## Use
-
-```go
-import(
-    "github.com/humilityai/hdbscan"
-)
-
-func main() {
-    data := [][]float64{
-        []float64{1,2,3},
-        []float64{3,2,1},
-    }
-    minimumClusterSize := len(data)
-    minimumSpanningTree := true
-
-    // create
-    clustering, err := hdbscan.NewClustering(data, minimumClusterSize)
-    if err != nil {
-        panic(err)
-    }
-
-    // options
-    clustering = clustering.Verbose().OutlierDetection()
-
-    //run
-    clustering.Run(hdbscan.EuclideanDistance, hdbscan.VarianceScore, minimumSpanningTree)
-
-    // If using sampling, then can use the Assign() method afterwards on the total dataset.
-}
-```
-
-### options
+### options for hdbscan clustering
 
 - `Verbose()` will log the progress of the clustering to stdout.
 - `Voronoi()` will add all points not placed in a cluster in the final clustering to their nearest cluster. All unassigned data points outliers will be added to their nearest cluster.
