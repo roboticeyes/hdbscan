@@ -31,7 +31,7 @@ func ImageControler(imgReader io.Reader) *ImageCV {
 	// Auto canny
 	edge := blured.canny(0.5)
 	// Dilatation
-	dilate := edge.dilatation(7)
+	dilate := edge.dilatation(100)
 	// Find contours for dilate
 	dilate.findContours()
 	// Show BB

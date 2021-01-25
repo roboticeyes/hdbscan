@@ -146,7 +146,7 @@ func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) erro
 	// Filter edges by MAD - Use only if point distance is equidistant
 	// edges = c.filterEdges(edges)
 	// Plot minimum spanning tree
-	c.plotminimumSpanningTree(edges)
+	// c.plotminimumSpanningTree(edges)
 	// Build dendogram
 	dendogram := c.buildDendogram(edges)
 	// Build Clusters

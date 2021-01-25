@@ -16,6 +16,8 @@ package hdbscan
 
 import (
 	"math"
+
+	"github.com/golang/geo/r3"
 )
 
 // DistanceFunc ...
@@ -32,22 +34,13 @@ var EuclideanDistance = func(v1, v2 []float64) float64 {
 
 // EuclideanDistance ...
 var AngleVector = func(v1, v2 []float64) float64 {
-	dotproduct := v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]
-	v1Length := EuclideanDistance(v1, v1)
-	v2Length := EuclideanDistance(v2, v2)
-	theta := dotproduct / (v1Length * v2Length)
-	return math.Acos(theta)
+	vec1 := r3.Vector{X: v1[0], Y: v1[1], Z: v1[2]}
+	vec2 := r3.Vector{X: v2[0], Y: v2[1], Z: v2[2]}
+	return float64(vec1.Angle(vec2).Radians())
+	// dotproduct := v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]
+	// v1Length := EuclideanDistance(v1, v1)
+	// v2Length := EuclideanDistance(v2, v2)
+	// theta := dotproduct / (v1Length * v2Length)
+	// return math.Acos(theta)
 	// return math.Acos(clamp(theta, -1, 1))
-}
-
-// Clamp clamps x to the provided closed interval [a, b]
-func clamp(x, a, b float64) float64 {
-
-	if x < a {
-		return a
-	}
-	if x > b {
-		return b
-	}
-	return x
 }

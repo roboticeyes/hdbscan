@@ -15,7 +15,10 @@
 package hdbscan
 
 import (
+	"bufio"
+	"fmt"
 	"log"
+	"os"
 	"sort"
 )
 
@@ -83,7 +86,43 @@ func (c *Clustering) mutualReachabilityGraph() edges {
 	}
 	c.wg.Wait()
 
+	outputfile, _ := os.Create(c.directory + "debug1.txt")
+	defer outputfile.Close()
+	writer := bufio.NewWriter(outputfile)
+	for _, p := range c.mst.edges {
+
+		x := fmt.Sprintf("%v", p.p1)
+		y := fmt.Sprintf("%v", p.p2)
+		z := fmt.Sprintf("%f", p.dist)
+
+		_, err := writer.WriteString(x + " " + y + " " + z + "\n")
+		if err != nil {
+			panic(err)
+		}
+
+	}
+	// Very important to invoke after writing a large number of lines
+	writer.Flush()
+
 	sort.Sort(c.mst.edges)
+
+	outputfile, _ = os.Create(c.directory + "debug2.txt")
+	defer outputfile.Close()
+	writer = bufio.NewWriter(outputfile)
+	for _, p := range c.mst.edges {
+
+		x := fmt.Sprintf("%v", p.p1)
+		y := fmt.Sprintf("%v", p.p2)
+		z := fmt.Sprintf("%f", p.dist)
+
+		_, err := writer.WriteString(x + " " + y + " " + z + "\n")
+		if err != nil {
+			panic(err)
+		}
+
+	}
+	// Very important to invoke after writing a large number of lines
+	writer.Flush()
 
 	if c.verbose {
 		log.Println("finished mutual reachability")

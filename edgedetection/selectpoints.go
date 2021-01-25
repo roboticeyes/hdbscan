@@ -17,9 +17,9 @@ func (d *Data) correspondendingPoints(modus string) *ImageCV {
 	var whitePoints gocv.Mat
 	switch string(modus) {
 	case "barycenter":
-		whitePoints = d.findRawPoints(upperZThreshold, lowerZThreshold, minHeight)
-	case "rawpoints":
 		whitePoints = d.findNormalsAndBarycenter(upperZThreshold, lowerZThreshold, minHeight)
+	case "rawpoints":
+		whitePoints = d.findRawPoints(upperZThreshold, lowerZThreshold, minHeight)
 	}
 
 	return &ImageCV{mat: whitePoints}

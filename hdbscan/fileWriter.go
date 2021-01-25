@@ -7,21 +7,21 @@ import (
 	"os"
 	"time"
 
-	"github.com/edgeDetection/edgeDetection"
+	"github.com/edgeDetection/edgedetection"
 )
 
-func getcolors(k int) ([]edgeDetection.Color, []string) {
+func getcolors(k int) ([]edgedetection.Color, []string) {
 	time := time.Now().Nanosecond()
 	rand.Seed(int64(time))
 
-	colors := make([]edgeDetection.Color, k)
+	colors := make([]edgedetection.Color, k)
 	colorname := make([]string, k)
 	for i := 0; i < k; i++ {
 
-		randnum := rand.Intn(len(edgeDetection.Colorsrand)) // colorsrand[randnum]
-		color := edgeDetection.Colorsrand[randnum]
+		randnum := rand.Intn(len(edgedetection.Colorsrand)) // colorsrand[randnum]
+		color := edgedetection.Colorsrand[randnum]
 
-		colors[i], _ = edgeDetection.IsColorName(color)
+		colors[i], _ = edgedetection.IsColorName(color)
 		colorname[i] = color
 	}
 	return colors, colorname

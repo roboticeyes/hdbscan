@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/edgeDetection/edgeDetection"
+	"github.com/edgeDetection/edgedetection"
 	"github.com/edgeDetection/hdbscan"
 	"github.com/fatih/color"
 )
@@ -56,11 +56,11 @@ func main() {
 		defer depthReader.Close()
 		defer imgReader.Close()
 
-		detections := edgeDetection.Detection(meshReader, depthReader, imgReader)
+		detections := edgedetection.Detection(meshReader, depthReader, imgReader)
 		log.Println("Number of points to cluster: ", len(detections.Normale))
 
 		// hdbscan
-		minimumClusterSize := 20
+		minimumClusterSize := 500
 		minimumSpanningTree := true
 
 		clustering, err := hdbscan.NewClustering(detections.Normale, minimumClusterSize, argument)
@@ -70,7 +70,7 @@ func main() {
 
 		// Set options for clustering
 		clustering = clustering.Verbose().OutlierDetection().NearestNeighbor()
-		clustering.Run(hdbscan.AngleVector, hdbscan.VarianceScore, minimumSpanningTree)
+		clustering.Run(hdbscan.AngleVector, hdbscan.StabilityScore, minimumSpanningTree)
 
 		writeClusterToObj(clustering, detections, argument)
 	} else {
@@ -78,7 +78,7 @@ func main() {
 	}
 }
 
-func writeClusterToObj(c *hdbscan.Clustering, d *edgeDetection.Data, argument string) {
+func writeClusterToObj(c *hdbscan.Clustering, d *edgedetection.Data, argument string) {
 	colors, _ := getcolors(len(c.Clusters))
 	for i, cl := range c.Clusters {
 		outputfile, _ := os.Create(argument + "cluster_" + fmt.Sprint(i) + "_.obj")
@@ -122,18 +122,18 @@ func writeClusterToObj(c *hdbscan.Clustering, d *edgeDetection.Data, argument st
 	}
 }
 
-func getcolors(k int) ([]edgeDetection.Color, []string) {
+func getcolors(k int) ([]edgedetection.Color, []string) {
 	time := time.Now().Nanosecond()
 	rand.Seed(int64(time))
 
-	colors := make([]edgeDetection.Color, k)
+	colors := make([]edgedetection.Color, k)
 	colorname := make([]string, k)
 	for i := 0; i < k; i++ {
 
-		randnum := rand.Intn(len(edgeDetection.Colorsrand)) // colorsrand[randnum]
-		color := edgeDetection.Colorsrand[randnum]
+		randnum := rand.Intn(len(edgedetection.Colorsrand)) // colorsrand[randnum]
+		color := edgedetection.Colorsrand[randnum]
 
-		colors[i], _ = edgeDetection.IsColorName(color)
+		colors[i], _ = edgedetection.IsColorName(color)
 		colorname[i] = color
 	}
 	return colors, colorname

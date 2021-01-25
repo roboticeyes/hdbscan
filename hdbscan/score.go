@@ -164,37 +164,44 @@ func (cl *cluster) calcClusterStability(c *Clustering, pointsLastFork []int) {
 	death := make([]float64, len(cl.Points))
 
 	for i, p1Index := range cl.Points {
-		lambda := make([]float64, 0)
-		c.wg.Add(1)
-		c.semaphore <- true
-		go func(i int, p1Index int) {
+		lambda := make([]float64, len(cl.Points))
+		counter := 0
+		// c.wg.Add(1)
+		// c.semaphore <- true
+		// go func(i int, p1Index int) {
 
-			for _, p2Index := range cl.Points {
-				if p1Index == p2Index {
-					continue
-				}
-				currentLam := c.lambda[p1Index][p2Index]
-				if math.IsInf(currentLam, 0) {
-					continue
-				}
-				if currentLam == 0 {
-					color.Red("calcClusterStability is Out of controll")
-				}
-				lambda = append(lambda, currentLam)
+		for ii, p2Index := range cl.Points {
+			if p1Index == p2Index {
+				continue
 			}
+			currentLam := c.lambda[p1Index][p2Index]
+			if math.IsInf(currentLam, 0) {
+				continue
+			}
+			if currentLam == 0 {
+				color.Red("calcClusterStability is Out of controll")
+			}
+			lambda[ii] = currentLam
+			counter++
+		}
 
-			<-c.semaphore
-			c.wg.Done()
-			// FELIX compare speed of "sort.Float64s" & "your mergeSort"
-			sort.Float64s(lambda)
+		// <-c.semaphore
+		// c.wg.Done()
+		// FELIX compare speed of "sort.Float64s" & "your mergeSort"
+		if counter < len(cl.Points)-c.mcs {
+			continue
+		}
 
-			death[i] = lambda[len(cl.Points)-c.mcs]
-			birth[i] = (lambda[0])
+		sort.Float64s(lambda)
 
-		}(i, p1Index)
+		// fmt.Println("len(cl.Points)-c.mcs: ", len(cl.Points)-c.mcs, "i: ", i)
+		death[i] = lambda[len(cl.Points)-c.mcs]
+		birth[i] = (lambda[0])
+
+		// }(i, p1Index)
 	}
-	c.wg.Wait()
-	sort.Float64s(birth)
+	// c.wg.Wait()
+	// sort.Float64s(birth)
 	cl.lambdaBirth = birth[0]
 
 	var sum float64
