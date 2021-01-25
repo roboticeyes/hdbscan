@@ -144,7 +144,7 @@ func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) erro
 	// Calculate "Mutual Reachability Graph" and build minimum spaning tree
 	edges := c.mutualReachabilityGraph()
 	// Filter edges by MAD - Use only if point distance is equidistant
-	edges = c.filterEdges(edges)
+	// edges = c.filterEdges(edges)
 	// Plot minimum spanning tree
 	c.plotminimumSpanningTree(edges)
 	// Build dendogram
@@ -155,11 +155,11 @@ func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) erro
 	// Calculate stability
 	c.scoreClusters(score)
 	// Write Clusters to file before selecting the clusters
-	c.writeClusterToFile("before")
+	// c.writeClusterToFile("before")
 	// Select Clusters
 	c.selectOptimalClustering(score)
 	// Write Clusters to file after selecting the clusters
-	c.writeClusterToFile("after")
+	// c.writeClusterToFile("after")
 	// Calculate centroids for every cluster
 	c.clusterCentroids()
 	// Outlier detection
@@ -167,11 +167,6 @@ func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) erro
 	// If oc (outlier clustering) is true
 	// all outliers from a cluster become a cluster of their own
 	c.outlierClustering()
-
-	// Write every cluster to a obj- file (Meshlab compatible)
-	c.writeClusterToObj()
-	// Draw bb for every cluster
-	// c.clusterToImg()
 
 	return nil
 }

@@ -108,9 +108,9 @@ func (d *Data) writeToobjFile(filename string, k int) {
 
 	for i, o := range d.clusterNumber {
 
-		bsx := fmt.Sprintf("%f", d.points[i][0])
-		bsy := fmt.Sprintf("%f", d.points[i][1])
-		bsz := fmt.Sprintf("%f", d.points[i][2])
+		bsx := fmt.Sprintf("%f", d.Points[i][0])
+		bsy := fmt.Sprintf("%f", d.Points[i][1])
+		bsz := fmt.Sprintf("%f", d.Points[i][2])
 
 		c := colors[o]
 		R := fmt.Sprintf("%1.3f", c.R)

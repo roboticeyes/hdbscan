@@ -36,7 +36,7 @@ func (d *Data) findPoints(upperZThreshold, lowerZThreshold, minHeight float64) g
 			if pixel && (vertex.Z >= minHeight+lowerZThreshold) && (vertex.Z <= minHeight+upperZThreshold) {
 				wp++
 				whitePoints.SetUCharAt(row, col, uint8(255))
-				d.points = append(d.points, []float64{vertex.X, vertex.Y, vertex.Z})
+				d.Points = append(d.Points, []float64{vertex.X, vertex.Y, vertex.Z})
 			}
 		}
 	}
