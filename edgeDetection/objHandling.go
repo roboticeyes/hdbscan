@@ -13,25 +13,27 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/go-gl/mathgl/mgl64"
 )
 
-func ReadObjFile(meshReader io.Reader) ([]Vector3, []Vector2, [][3]int, [][3]int) {
+func ReadObjFile(meshReader io.Reader) ([]mgl64.Vec3, []mgl64.Vec2, [][3]int, [][3]int) {
 
 	bytestring, err := ioutil.ReadAll(meshReader)
 	if err != nil {
 		color.Red("Cannot read input file:", err)
 	}
 
-	var tempV3 Vector3
-	var verticesXYZ []Vector3
+	var tempV3 mgl64.Vec3
+	var verticesXYZ []mgl64.Vec3
 
-	var tempV2 Vector2
-	var verticesUV []Vector2
+	var tempV2 mgl64.Vec2
+	var verticesUV []mgl64.Vec2
 
 	var temp3xyz [3]int
 	var temp3uv [3]int
 	var uvs [][3]int
 	var xyzs [][3]int
+
 	line := bytes.Split(bytestring, []byte("\n"))
 	for _, l := range line {
 		element := bytes.Split(l, []byte(" "))
@@ -40,13 +42,13 @@ func ReadObjFile(meshReader io.Reader) ([]Vector3, []Vector2, [][3]int, [][3]int
 		case "#":
 			continue
 		case "v":
-			tempV3.X = parseToFloat(element[1])
-			tempV3.Y = parseToFloat(element[2])
-			tempV3.Z = parseToFloat(element[3])
+			tempV3[0] = parseToFloat(element[1])
+			tempV3[1] = parseToFloat(element[2])
+			tempV3[2] = parseToFloat(element[3])
 			verticesXYZ = append(verticesXYZ, tempV3)
 		case "vt":
-			tempV2.X = parseToFloat(element[1])
-			tempV2.Y = parseToFloat(element[2])
+			tempV2[0] = parseToFloat(element[1])
+			tempV2[1] = parseToFloat(element[2])
 			verticesUV = append(verticesUV, tempV2)
 		case "f":
 			first := bytes.Split(element[1], []byte("/"))

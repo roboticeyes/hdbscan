@@ -1,9 +1,5 @@
 package hdbscan
 
-import (
-	"github.com/edgeDetection/edgeDetection"
-)
-
 func (c *Clustering) clusterToImg() {
 	// Read files
 	// verticesXYZ, verticesUV, xyzs, uvs := edgeDetection.ReadObjFile(c.directory + "/mesh.obj")
@@ -56,19 +52,19 @@ func (c *Clustering) clusterToImg() {
 	// gocv.IMWrite(c.directory+"/bb.png", img)
 }
 
-func meanUVCoords(uvs [3]int, verticesUV []edgeDetection.Vector2) edgeDetection.Vector2 {
-	vUV1 := verticesUV[uvs[0]]
-	vUV2 := verticesUV[uvs[1]]
-	vUV3 := verticesUV[uvs[2]]
-	mean := vUV1.Add2(vUV2).Add2(vUV3).MultiplyByScalar2(1. / 3)
-	return mean
-}
+// func meanUVCoords(uvs [3]int, verticesUV []edgeDetection.Vector2) edgeDetection.Vector2 {
+// 	vUV1 := verticesUV[uvs[0]]
+// 	vUV2 := verticesUV[uvs[1]]
+// 	vUV3 := verticesUV[uvs[2]]
+// 	mean := vUV1.Add2(vUV2).Add2(vUV3).MultiplyByScalar2(1. / 3)
+// 	return mean
+// }
 
-func (c *Clustering) storePointInVector(p int) edgeDetection.Vector3 {
-	var clusterPoint edgeDetection.Vector3
-	clusterPoint.X = c.data[p][0]
-	clusterPoint.Y = c.data[p][1]
-	clusterPoint.Z = c.data[p][2]
-	return clusterPoint
+// func (c *Clustering) storePointInVector(p int) edgeDetection.Vector3 {
+// 	var clusterPoint edgeDetection.Vector3
+// 	clusterPoint.X = c.data[p][0]
+// 	clusterPoint.Y = c.data[p][1]
+// 	clusterPoint.Z = c.data[p][2]
+// 	return clusterPoint
 
-}
+// }

@@ -1,15 +1,18 @@
 package edgeDetection
 
-import "io"
+import (
+	"io"
 
-// github.com/go-gl/mathgl/mgl64
+	"github.com/go-gl/mathgl/mgl64"
+)
+
 type Data struct {
 	img *ImageCV
 
 	depthFile []float64
 
-	coordXYZ []Vector3
-	coordUV  []Vector2
+	coordXYZ []mgl64.Vec3
+	coordUV  []mgl64.Vec2
 
 	Points [][]float64
 
@@ -17,18 +20,10 @@ type Data struct {
 	indexUV  [][3]int
 
 	clusterNumber []int
-	mean          []Vector3
+	mean          []mgl64.Vec3
 
 	Normale    [][]float64
 	Barycenter [][]float64
-}
-
-type Vector3 struct {
-	X, Y, Z float64
-}
-
-type Vector2 struct {
-	X, Y float64
 }
 
 func Detection(meshReader, depthReader, imgReader io.Reader) *Data {
@@ -43,11 +38,9 @@ func Detection(meshReader, depthReader, imgReader io.Reader) *Data {
 		indexUV:   uvs,
 	}
 
-	whitePoints := d.correspondendingPlaneNormals()
+	// Barycenter or raw points
+	whitePoints := d.correspondendingPoints("barycenter")
 	whitePoints.showImg("whitePoints")
-
-	// whitePoints := d.findCorrespondendingPoints()
-	// whitePoints.showImg("whitePoints")
 
 	return d
 }

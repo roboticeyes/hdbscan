@@ -62,13 +62,15 @@ func main() {
 		// hdbscan
 		minimumClusterSize := 20
 		minimumSpanningTree := true
+
 		clustering, err := hdbscan.NewClustering(detections.Normale, minimumClusterSize, argument)
 		if err != nil {
 			panic(err)
 		}
+
 		// Set options for clustering
 		clustering = clustering.Verbose().OutlierDetection().NearestNeighbor()
-		clustering.Run(hdbscan.AngleVector, hdbscan.Leaf, minimumSpanningTree)
+		clustering.Run(hdbscan.AngleVector, hdbscan.VarianceScore, minimumSpanningTree)
 
 		writeClusterToObj(clustering, detections, argument)
 	} else {
