@@ -1,4 +1,4 @@
-package edgeDetection
+package edgedetection
 
 import "image"
 
