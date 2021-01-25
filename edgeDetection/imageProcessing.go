@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/png"
+	"io"
 	"math"
 
+	fatih "github.com/fatih/color"
 	"gocv.io/x/gocv"
 )
 
@@ -18,10 +21,11 @@ type ImageCV struct {
 	center []int //[0]width [1]hight
 }
 
-func ImageControler(filename string) *ImageCV {
+func ImageControler(imgReader io.Reader) *ImageCV {
 
 	// Read Original image
-	org := readImg(filename)
+	org := readImg(imgReader)
+	org.showImg("Orginal")
 	// Blur image (sigmaX, sigmaY, kernel size)
 	blured := org.gauSSianBlur(0, 0, 7)
 	// Auto canny
@@ -112,8 +116,15 @@ func (icv *ImageCV) showImg(windownName string) {
 	window.WaitKey(0)
 }
 
-func readImg(filename string) *ImageCV {
-	return &ImageCV{mat: gocv.IMRead(filename, 0)}
+func readImg(imgReader io.Reader) *ImageCV {
+
+	img, _, err := image.Decode(imgReader)
+	if err != nil {
+		fatih.Red("Can't decode image", err)
+	}
+	mat, err := gocv.ImageToMatRGB(img)
+	gocv.CvtColor(mat, &mat, gocv.ColorBGRToGray)
+	return &ImageCV{mat: mat}
 }
 
 func (i *ImageCV) resizeImage(fx float64, fy float64) *ImageCV {

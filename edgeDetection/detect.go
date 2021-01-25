@@ -1,5 +1,7 @@
 package edgeDetection
 
+import "io"
+
 // github.com/go-gl/mathgl/mgl64
 const (
 	Obj   = "/mesh.obj"
@@ -32,12 +34,12 @@ type Vector2 struct {
 	X, Y float64
 }
 
-func Detection(argument string) [][]float64 {
+func Detection(meshReader, depthReader, imgReader io.Reader) [][]float64 {
 
-	verticesXYZ, verticesUV, xyzs, uvs := ReadObjFile(argument + Obj)
+	verticesXYZ, verticesUV, xyzs, uvs := ReadObjFile(meshReader)
 	d := &Data{
-		img:       ImageControler(argument + Img),
-		depthFile: ReadDepthFile(argument + Depth),
+		img:       ImageControler(imgReader),
+		depthFile: ReadDepthFile(depthReader),
 		coordXYZ:  verticesXYZ,
 		coordUV:   verticesUV,
 		indexXYZ:  xyzs,

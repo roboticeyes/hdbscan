@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -14,11 +15,9 @@ import (
 	"github.com/fatih/color"
 )
 
-func ReadObjFile(filename string) ([]Vector3, []Vector2, [][3]int, [][3]int) {
+func ReadObjFile(meshReader io.Reader) ([]Vector3, []Vector2, [][3]int, [][3]int) {
 
-	reader := open(filename)
-
-	bytestring, err := ioutil.ReadAll(reader)
+	bytestring, err := ioutil.ReadAll(meshReader)
 	if err != nil {
 		color.Red("Cannot read input file:", err)
 	}
@@ -85,11 +84,9 @@ func parseToInt(num []byte) int {
 	return intnum
 }
 
-func ReadDepthFile(filename string) []float64 {
+func ReadDepthFile(meshReader io.Reader) []float64 {
 
-	reader := open(filename)
-
-	scanner := bufio.NewScanner(reader)
+	scanner := bufio.NewScanner(meshReader)
 	scanner.Split(bufio.ScanWords)
 	var result []float64
 	for scanner.Scan() {
@@ -100,15 +97,6 @@ func ReadDepthFile(filename string) []float64 {
 		result = append(result, x)
 	}
 	return result
-}
-
-func open(filename string) *os.File {
-
-	reader, err := os.Open(filename) // just pass the file name
-	if err != nil {
-		fmt.Print(err)
-	}
-	return reader
 }
 
 func (d *Data) writeToobjFile(filename string, k int) {

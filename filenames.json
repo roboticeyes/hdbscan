@@ -1,0 +1,5 @@
+{
+    "objfile": "mesh.obj",
+    "depthfile": "depth.txt",
+    "texture": "texture.png"
+}

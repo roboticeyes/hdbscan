@@ -171,7 +171,7 @@ func (c *Clustering) Run(distanceFunc DistanceFunc, score string, mst bool) erro
 	// Write every cluster to a obj- file (Meshlab compatible)
 	c.writeClusterToObj()
 	// Draw bb for every cluster
-	c.clusterToImg()
+	// c.clusterToImg()
 
 	return nil
 }
